@@ -230,10 +230,7 @@ h3 {
             video: {
                 cursor: "always"
             },
-            audio: {
-                echoCancellation: false,
-                noiseSuppression: false
-            }
+       
         }).then((stream) => {
             let videoTrack = stream.getAudioTracks()[0];
             videoTrack.onended = function () {
@@ -252,7 +249,8 @@ h3 {
     function callPeer(id) {
         navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: false
+          
+
         }).then((stream) => {
             myStream = stream
             addOurVideo(stream)
