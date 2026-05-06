@@ -1,0 +1,3642 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AccStore – Game Account Marketplace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Firebase v9 compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <style>
+    :root {
+      --bg: #05050f;
+      --bg2: #0a0a1a;
+      --bg3: #0f0f22;
+      --card: #0d0d20;
+      --card2: #12122a;
+      --border: #1e1e3f;
+      --border2: #2a2a55;
+      --neon1: #7c3aed;
+      --neon2: #2563eb;
+      --neon3: #ec4899;
+      --neon4: #06b6d4;
+      --text: #e8e8ff;
+      --text2: #9090c0;
+      --text3: #5555aa;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --grad1: linear-gradient(135deg, #7c3aed, #2563eb);
+      --grad2: linear-gradient(135deg, #ec4899, #7c3aed);
+      --grad3: linear-gradient(135deg, #06b6d4, #2563eb);
+      --shadow: 0 0 30px rgba(124,58,237,0.15);
+      --glow: 0 0 20px rgba(124,58,237,0.4);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Exo 2', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    #root { min-height: 100vh; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--neon1); border-radius: 2px; }
+
+
+    /* VIP */
+    .vip-section { margin-bottom: 20px; }
+    .vip-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #f59e0b;
+    }
+    .vip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 640px) { .vip-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .vip-grid { grid-template-columns: repeat(4, 1fr); } }
+    .vip-card {
+      background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(124,58,237,0.08));
+      border: 1.5px solid rgba(245,158,11,0.4);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .vip-card:hover {
+      border-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(245,158,11,0.2);
+    }
+    .vip-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 50px;
+      z-index: 2;
+      letter-spacing: 0.5px;
+    }
+    .vip-toggle {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(124,58,237,0.06));
+      border: 1.5px solid rgba(245,158,11,0.25);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+    .vip-toggle.active {
+      border-color: #f59e0b;
+      background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(124,58,237,0.12));
+    }
+    .vip-switch {
+      width: 40px;
+      height: 22px;
+      border-radius: 50px;
+      background: var(--border2);
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .vip-switch.on { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+    .vip-switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      transition: left 0.2s;
+    }
+    .vip-switch.on::after { left: 21px; }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Utility */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .w-full { width: 100%; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .hidden { display: none; }
+    .cursor-pointer { cursor: pointer; }
+    .text-center { text-align: center; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; }
+    .p-4 { padding: 16px; }
+    .rounded { border-radius: 8px; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,0.3); } 50% { box-shadow: 0 0 40px rgba(124,58,237,0.6); } }
+    @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    .slide-in { animation: slideIn 0.3s ease forwards; }
+    .spinning { animation: spin 1s linear infinite; }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+    .floating { animation: float 3s ease-in-out infinite; }
+
+    /* Skeleton loader */
+    .skeleton {
+      background: linear-gradient(90deg, var(--card) 25%, var(--card2) 50%, var(--card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card2);
+      border: 1px solid var(--border2);
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease;
+      box-shadow: var(--glow);
+    }
+    .toast.success { border-color: var(--success); color: var(--success); }
+    .toast.error { border-color: var(--danger); color: var(--danger); }
+    .toast.info { border-color: var(--neon1); color: var(--neon1); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Exo 2', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--grad1);
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: var(--glow); }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border2);
+    }
+    .btn-outline:hover { border-color: var(--neon1); color: var(--neon1); }
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text2);
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    .btn-icon { padding: 8px; border-radius: 6px; }
+
+    /* Inputs */
+    .input {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .input:focus { border-color: var(--neon1); box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+    .input::placeholder { color: var(--text3); }
+    select.input option { background: var(--bg2); }
+    textarea.input { resize: vertical; min-height: 100px; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.25s ease;
+    }
+    .card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
+    .card-neon {
+      background: var(--card);
+      border: 1px solid var(--neon1);
+      border-radius: 12px;
+      box-shadow: var(--glow);
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-purple { background: rgba(124,58,237,0.2); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+    .badge-blue { background: rgba(37,99,235,0.2); color: #60a5fa; border: 1px solid rgba(37,99,235,0.3); }
+    .badge-pink { background: rgba(236,72,153,0.2); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); }
+    .badge-cyan { background: rgba(6,182,212,0.2); color: #22d3ee; border: 1px solid rgba(6,182,212,0.3); }
+    .badge-green { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease;
+    }
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 60px rgba(124,58,237,0.2);
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-body { padding: 24px; }
+
+    /* Nav */
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: rgba(10,10,26,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+      padding: 0 8px;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text3);
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 60px;
+      border: none;
+      background: transparent;
+      font-family: 'Exo 2', sans-serif;
+    }
+    .nav-item.active { color: var(--neon1); }
+    .nav-item:hover { color: var(--text2); }
+    .nav-item svg { width: 22px; height: 22px; }
+    .nav-item.active svg { filter: drop-shadow(0 0 6px var(--neon1)); }
+    .nav-create {
+      background: var(--grad1);
+      color: white !important;
+      border-radius: 14px;
+      box-shadow: var(--glow);
+    }
+    .nav-create:hover { opacity: 0.9; transform: translateY(-2px); }
+
+    /* Topbar */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(5,5,15,0.97);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+    .logo {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      background: var(--grad1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 1px;
+    }
+    .logo span { color: var(--neon3); -webkit-text-fill-color: var(--neon3); }
+
+    /* Page */
+    .page {
+      padding-top: 74px;
+      padding-bottom: 80px;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Listing Grid */
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 640px) {
+      .listings-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    }
+    @media (min-width: 1024px) {
+      .listings-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    }
+    @media (min-width: 1280px) {
+      .listings-grid { grid-template-columns: repeat(5, 1fr); gap: 20px; }
+    }
+
+    /* Listing Card */
+    .listing-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      animation: fadeIn 0.4s ease;
+    }
+    .listing-card:hover {
+      border-color: var(--neon1);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .listing-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      background: var(--bg3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    .listing-body { padding: 12px; }
+    .listing-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .listing-price {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      background: var(--grad1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .listing-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+    /* Search bar */
+    .search-bar {
+      position: sticky;
+      top: 64px;
+      z-index: 90;
+      background: rgba(5,5,15,0.95);
+      backdrop-filter: blur(20px);
+      padding: 12px 0;
+      margin-bottom: 8px;
+    }
+    .search-bar-inner {
+      position: relative;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .search-bar input {
+      padding-left: 46px;
+      height: 46px;
+      font-size: 15px;
+      border-radius: 12px;
+      flex: 1;
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      pointer-events: none;
+    }
+
+    /* Category chips */
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text2);
+      transition: all 0.2s;
+    }
+    .chip:hover { border-color: var(--border2); color: var(--text); }
+    .chip.active {
+      background: rgba(124,58,237,0.15);
+      border-color: var(--neon1);
+      color: #a78bfa;
+      box-shadow: 0 0 12px rgba(124,58,237,0.2);
+    }
+
+    /* Label */
+    .label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-group { margin-bottom: 16px; }
+
+    /* Detail page */
+    .detail-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background: var(--bg3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .img-gallery {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    .img-gallery img {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      flex-shrink: 0;
+    }
+    .img-gallery img.active { border-color: var(--neon1); }
+
+    /* Chat */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+      animation: fadeIn 0.2s ease;
+    }
+    .msg.mine {
+      background: rgba(124,58,237,0.3);
+      border: 1px solid rgba(124,58,237,0.4);
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .msg.theirs {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+    .msg-meta { font-size: 10px; color: var(--text3); margin-top: 4px; }
+    .chat-input-bar {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Image upload preview */
+    .img-preview-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .img-preview-item {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      overflow: visible;
+    }
+    .img-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .img-preview-remove {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      width: 18px;
+      height: 18px;
+      background: var(--danger);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 10px;
+      line-height: 1;
+      color: white;
+      font-weight: 700;
+      z-index: 1;
+    }
+    .upload-zone {
+      border: 2px dashed var(--border2);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text3);
+      background: var(--bg3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .upload-zone:hover { border-color: var(--neon1); color: var(--neon1); background: rgba(124,58,237,0.05); }
+
+    /* Profile */
+    .avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--grad1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      font-family: 'Rajdhani', sans-serif;
+      border: 3px solid var(--neon1);
+      box-shadow: var(--glow);
+    }
+
+    /* Lang switcher */
+    .lang-btn {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Exo 2', sans-serif;
+      transition: all 0.2s;
+    }
+    .lang-btn:hover { border-color: var(--neon1); color: var(--neon1); }
+    .lang-dropdown {
+      position: absolute;
+      top: 40px;
+      right: 0;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      min-width: 120px;
+      z-index: 200;
+    }
+    .lang-option {
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .lang-option:hover { background: rgba(124,58,237,0.15); }
+    .lang-option.active { color: var(--neon1); }
+
+    /* Section title */
+    .section-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 20px 0 24px;
+      text-align: center;
+    }
+    .hero-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .hero-title .grad {
+      background: var(--grad2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub { font-size: 14px; color: var(--text2); }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* Spinner */
+    .spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--neon1);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .spinner-lg {
+      width: 48px; height: 48px;
+      border-width: 3px;
+    }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text3);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+    .empty-sub { font-size: 14px; }
+
+    /* Glow line */
+    .glow-line {
+      height: 2px;
+      background: var(--grad1);
+      border-radius: 1px;
+      box-shadow: 0 0 10px rgba(124,58,237,0.5);
+    }
+
+    /* Sign in prompt */
+    .signin-prompt {
+      background: rgba(124,58,237,0.08);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    /* Chat rooms list */
+    .chat-room-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .chat-room-item:hover { background: rgba(255,255,255,0.03); }
+
+    /* Notification dot */
+    .notif-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--neon3);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--neon3);
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-val {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      background: var(--grad1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label { font-size: 11px; color: var(--text3); font-weight: 600; }
+
+    /* Setup screen */
+    .setup-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .setup-screen .logo { font-size: 48px; margin-bottom: 16px; }
+    .setup-card {
+      background: var(--card);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .setup-step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .setup-step:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
+    .step-num {
+      min-width: 28px;
+      height: 28px;
+      background: var(--grad1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+    }
+    .step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+    .step-text code {
+      background: var(--bg3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--neon4);
+      word-break: break-all;
+    }
+    .step-text strong { color: var(--text); }
+
+
+    /* VIP Listings */
+    .vip-section { margin-bottom: 24px; }
+    .vip-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #f59e0b;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    .vip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 640px) { .vip-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .vip-grid { grid-template-columns: repeat(4, 1fr); } }
+    .vip-card {
+      background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03));
+      border: 1.5px solid rgba(245,158,11,0.4);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      animation: fadeIn 0.4s ease;
+    }
+    .vip-card:hover {
+      border-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(245,158,11,0.2);
+    }
+    .vip-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 50px;
+      letter-spacing: 0.5px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    /* Price tag accent */
+    .price-tag {
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 8px;
+      padding: 4px 12px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+// ============================================================
+// FIREBASE CONFIGURATION
+// ============================================================
+// Replace with your Firebase project config
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBxG2WNUMTfQEZUcneppHgDVy6oQbkNBdI",
+  authDomain: "acstore-c40d8.firebaseapp.com",
+  projectId: "acstore-c40d8",
+  storageBucket: "acstore-c40d8.firebasestorage.app",
+  messagingSenderId: "185875653160",
+  appId: "1:185875653160:web:c4ac39b81dfb84e974cb1d"
+};
+
+// ============================================================
+// TELEGRAM + VIP CONFIG  — admin tərəfindən doldurulur
+// ============================================================
+const TELEGRAM_BOT_TOKEN = '8776960283:AAGYVI3INLiGfWv73jTVUru6_jHsjtvQu-E';     // @BotFather-dan alın
+const TELEGRAM_CHAT_ID   = '1743874043';       // @userinfobot ilə öyrənin
+const VIP_PRICE_AZN      = 2;                    // VIP elan qiyməti (₼)
+const SITE_CARD_NUMBER   = '4169 7388 5258 9120'; // Ödəniş kartı nömrəsi
+const SITE_CARD_NAME     = 'Fərid Məmmədli';            // Kart sahibinin adı
+const ADMIN_UID          = 'haBhPFjL1HNyqaqvPzG0zUrrUy03';      // Öz Firebase UID-niz (profil → settings)
+
+async function tgNotify(text) {
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML' })
+    });
+  } catch(e) { console.error('TG xəta:', e); }
+}
+
+async function tgSendPhoto(base64, caption) {
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') return;
+  try {
+    // base64-ü blob-a çevir
+    const arr = base64.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while(n--) u8arr[n] = bstr.charCodeAt(n);
+    const blob = new Blob([u8arr], { type: mime });
+    const fd = new FormData();
+    fd.append('chat_id', TELEGRAM_CHAT_ID);
+    fd.append('photo', blob, 'chek.jpg');
+    fd.append('caption', caption);
+    fd.append('parse_mode', 'HTML');
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+      method: 'POST', body: fd
+    });
+  } catch(e) { console.error('TG photo xəta:', e); }
+}
+
+// ============================================================
+// I18N TRANSLATIONS
+// ============================================================
+const TRANSLATIONS = {
+  az: {
+    appName: "AccStore",
+    tagline: "Oyun Hesabları Bazarı",
+    home: "Ana Səhifə",
+    chat: "Söhbət",
+    create: "Əlavə Et",
+    favorites: "Seçilmişlər",
+    profile: "Profil",
+    search: "Oyun axtarın...",
+    allCategories: "Hamısı",
+    createListing: "Elan Yarat",
+    title: "Başlıq",
+    description: "Təsvir",
+    price: "Qiymət (₼)",
+    category: "Kateqoriya",
+    phone: "Telefon nömrəsi",
+    uploadImages: "Şəkil yüklə",
+    uploadHint: "Şəkil seçmək üçün toxunun",
+    submit: "Dərc et",
+    login: "Giriş",
+    loginGoogle: "Google ilə daxil ol",
+    loginGuest: "Qonaq kimi bax",
+    logout: "Çıxış",
+    myListings: "Mənim Elanlarım",
+    noListings: "Hələ elan yoxdur",
+    noFavorites: "Seçilmiş elan yoxdur",
+    delete: "Sil",
+    edit: "Redaktə",
+    contact: "Əlaqə",
+    sendMsg: "Mesaj göndər",
+    typeMsg: "Mesaj yazın...",
+    loginToChat: "Söhbət etmək üçün daxil olun",
+    loginToFav: "Seçilmişlərə əlavə etmək üçün daxil olun",
+    loginToPost: "Elan yerləşdirmək üçün daxil olun",
+    guestWarning: "Qonaq rejimindəsiniz. Tam imkanlar üçün daxil olun.",
+    postedBy: "Yerləşdirən:",
+    postedAt: "Tarix:",
+    categories: {
+      all: "Hamısı",
+      moba: "MOBA",
+      fps: "FPS",
+      rpg: "RPG",
+      mmo: "MMO",
+      battle_royale: "Battle Royale",
+      sports: "İdman",
+      strategy: "Strategiya",
+      other: "Digər"
+    },
+    confirmDelete: "Bu elanı silmək istədiyinizə əminsiniz?",
+    yes: "Bəli",
+    no: "Xeyr",
+    saved: "Yadda saxlandı!",
+    deleted: "Silindi!",
+    error: "Xəta baş verdi",
+    loading: "Yüklənir...",
+    noResults: "Nəticə tapılmadı",
+    featured: "Seçilmiş Elanlar",
+    recent: "Son Elanlar",
+    langLabel: "AZ",
+    setupTitle: "Firebase Quraşdırın",
+    setupDesc: "Tətbiqi işə salmaq üçün Firebase layihəsi lazımdır.",
+    online: "Onlayn",
+    offline: "Oflayn",
+    editListing: "Elanı Redaktə Et",
+    save: "Saxla",
+    cancel: "Ləğv et",
+    chatWith: "Söhbət:",
+    noChats: "Hələ söhbət yoxdur",
+    chatHint: "Elan səhifəsindən söhbət başladın",
+    listingsCount: "Elanlar",
+    favCount: "Seçilmişlər",
+    joinDate: "Qoşulma tarixi",
+    totalListings: "Cəmi Elanlar",
+  },
+  en: {
+    appName: "AccStore",
+    tagline: "Game Account Marketplace",
+    home: "Home",
+    chat: "Chat",
+    create: "Post",
+    favorites: "Favorites",
+    profile: "Profile",
+    search: "Search games...",
+    allCategories: "All",
+    createListing: "Create Listing",
+    title: "Title",
+    description: "Description",
+    price: "Price (₼)",
+    category: "Category",
+    phone: "Phone number",
+    uploadImages: "Upload Images",
+    uploadHint: "Tap to select images",
+    submit: "Publish",
+    login: "Sign In",
+    loginGoogle: "Sign in with Google",
+    loginGuest: "Browse as Guest",
+    logout: "Sign Out",
+    myListings: "My Listings",
+    noListings: "No listings yet",
+    noFavorites: "No saved favorites",
+    delete: "Delete",
+    edit: "Edit",
+    contact: "Contact",
+    sendMsg: "Send",
+    typeMsg: "Type a message...",
+    loginToChat: "Sign in to chat",
+    loginToFav: "Sign in to save favorites",
+    loginToPost: "Sign in to post listings",
+    guestWarning: "You're browsing as guest. Sign in for full access.",
+    postedBy: "Posted by:",
+    postedAt: "Date:",
+    categories: {
+      all: "All",
+      moba: "MOBA",
+      fps: "FPS",
+      rpg: "RPG",
+      mmo: "MMO",
+      battle_royale: "Battle Royale",
+      sports: "Sports",
+      strategy: "Strategy",
+      other: "Other"
+    },
+    confirmDelete: "Are you sure you want to delete this listing?",
+    yes: "Yes",
+    no: "No",
+    saved: "Saved!",
+    deleted: "Deleted!",
+    error: "An error occurred",
+    loading: "Loading...",
+    noResults: "No results found",
+    featured: "Featured Listings",
+    recent: "Recent Listings",
+    langLabel: "EN",
+    setupTitle: "Setup Firebase",
+    setupDesc: "A Firebase project is required to run this app.",
+    online: "Online",
+    offline: "Offline",
+    editListing: "Edit Listing",
+    save: "Save",
+    cancel: "Cancel",
+    chatWith: "Chat:",
+    noChats: "No chats yet",
+    chatHint: "Start a chat from a listing page",
+    listingsCount: "Listings",
+    favCount: "Favorites",
+    joinDate: "Joined",
+    totalListings: "Total Listings",
+  },
+  ru: {
+    appName: "AccStore",
+    tagline: "Маркетплейс Игровых Аккаунтов",
+    home: "Главная",
+    chat: "Чат",
+    create: "Создать",
+    favorites: "Избранное",
+    profile: "Профиль",
+    search: "Поиск игр...",
+    allCategories: "Все",
+    createListing: "Создать Объявление",
+    title: "Заголовок",
+    description: "Описание",
+    price: "Цена (₼)",
+    category: "Категория",
+    phone: "Номер телефона",
+    uploadImages: "Загрузить фото",
+    uploadHint: "Нажмите для выбора",
+    submit: "Опубликовать",
+    login: "Войти",
+    loginGoogle: "Войти через Google",
+    loginGuest: "Смотреть как гость",
+    logout: "Выйти",
+    myListings: "Мои объявления",
+    noListings: "Нет объявлений",
+    noFavorites: "Нет избранного",
+    delete: "Удалить",
+    edit: "Редактировать",
+    contact: "Контакт",
+    sendMsg: "Отправить",
+    typeMsg: "Напишите сообщение...",
+    loginToChat: "Войдите для чата",
+    loginToFav: "Войдите для избранного",
+    loginToPost: "Войдите для публикации",
+    guestWarning: "Вы гость. Войдите для полного доступа.",
+    postedBy: "Автор:",
+    postedAt: "Дата:",
+    categories: {
+      all: "Все",
+      moba: "MOBA",
+      fps: "FPS",
+      rpg: "RPG",
+      mmo: "MMO",
+      battle_royale: "Battle Royale",
+      sports: "Спорт",
+      strategy: "Стратегия",
+      other: "Другое"
+    },
+    confirmDelete: "Вы уверены, что хотите удалить?",
+    yes: "Да",
+    no: "Нет",
+    saved: "Сохранено!",
+    deleted: "Удалено!",
+    error: "Произошла ошибка",
+    loading: "Загрузка...",
+    noResults: "Ничего не найдено",
+    featured: "Рекомендуемые",
+    recent: "Недавние объявления",
+    langLabel: "RU",
+    setupTitle: "Настройка Firebase",
+    setupDesc: "Необходим проект Firebase для работы приложения.",
+    online: "Онлайн",
+    offline: "Офлайн",
+    editListing: "Редактировать",
+    save: "Сохранить",
+    cancel: "Отмена",
+    chatWith: "Чат:",
+    noChats: "Нет чатов",
+    chatHint: "Начните чат со страницы объявления",
+    listingsCount: "Объявления",
+    favCount: "Избранное",
+    joinDate: "Дата входа",
+    totalListings: "Всего объявлений",
+  }
+};
+
+const CATEGORIES = ['moba','fps','rpg','mmo','battle_royale','sports','strategy','other'];
+const CATEGORY_ICONS = {
+  moba: '🗡️', fps: '🔫', rpg: '⚔️', mmo: '🌐',
+  battle_royale: '🪂', sports: '⚽', strategy: '♟️', other: '🎮'
+};
+const GAME_EMOJIS = ['🎮','🕹️','⚔️','🏆','💎','🔫','🗡️','🌟','🎯','🧙'];
+
+// ============================================================
+// CONTEXT
+// ============================================================
+const AppContext = React.createContext(null);
+
+function useApp() { return React.useContext(AppContext); }
+
+// ============================================================
+// FIREBASE HELPERS
+// ============================================================
+let db, auth, storage, firebaseReady = false;
+
+function initFirebase(config) {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    else firebase.app();
+    db = firebase.firestore();
+    auth = firebase.auth();
+    storage = firebase.storage();
+    firebaseReady = true;
+    return true;
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    return false;
+  }
+}
+
+// ============================================================
+// ICONS (inline SVG)
+// ============================================================
+const Icons = {
+  home: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  chat: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  plus: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  heart: ({filled}) => <svg viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+  profile: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  search: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  back: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>,
+  trash: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
+  edit: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  send: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+  close: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  google: () => <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>,
+  star: () => <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  image: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  phone: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.09 2.17 2 2 0 012.08 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.1A16 16 0 0016.9 17.09l1.46-1.34a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>,
+  check: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>,
+  info: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+};
+
+// ============================================================
+// UTILITY HOOKS
+// ============================================================
+function useToast() {
+  const [toast, setToast] = React.useState(null);
+  const show = React.useCallback((msg, type = 'info') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2800);
+  }, []);
+  return { toast, show };
+}
+
+function formatDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('az-AZ', { day:'2-digit', month:'short', year:'numeric' });
+}
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleTimeString('az-AZ', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ============================================================
+// SETUP SCREEN
+// ============================================================
+function SetupScreen({ onDone, t }) {
+  const [config, setConfig] = React.useState({
+    apiKey: '', authDomain: '', projectId: '',
+    storageBucket: '', messagingSenderId: '', appId: ''
+  });
+  const [error, setError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  const handleSave = () => {
+    if (!config.apiKey || !config.projectId) {
+      setError('API Key and Project ID are required');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    localStorage.setItem('acstore_firebase_config', JSON.stringify(config));
+    const ok = initFirebase(config);
+    if (ok) {
+      onDone();
+    } else {
+      setError('Firebase initialization failed. Check your config.');
+      setLoading(false);
+    }
+  };
+
+  const fields = [
+    { k: 'apiKey', label: 'API Key' },
+    { k: 'authDomain', label: 'Auth Domain' },
+    { k: 'projectId', label: 'Project ID' },
+    { k: 'storageBucket', label: 'Storage Bucket' },
+    { k: 'messagingSenderId', label: 'Messaging Sender ID' },
+    { k: 'appId', label: 'App ID' },
+  ];
+
+  return (
+    <div className="setup-screen">
+      <div className="logo">Acc<span>Store</span></div>
+      <p style={{color:'var(--text2)', fontSize:14}}>Game Account Marketplace</p>
+
+      <div className="setup-card">
+        <h2 style={{fontFamily:'Rajdhani',fontSize:20,marginBottom:6}}>🔥 Firebase Setup</h2>
+        <p style={{fontSize:13,color:'var(--text2)',marginBottom:20}}>
+          Create a Firebase project at <a href="https://console.firebase.google.com" target="_blank" style={{color:'var(--neon4)'}}>console.firebase.google.com</a>, enable Authentication (Google), Firestore, and Storage. Then paste your config below.
+        </p>
+
+        <div className="glow-line" style={{marginBottom:20}}/>
+
+        {fields.map(f => (
+          <div key={f.k} className="form-group">
+            <label className="label">{f.label}</label>
+            <input
+              className="input"
+              value={config[f.k]}
+              onChange={e => setConfig(p=>({...p,[f.k]:e.target.value}))}
+              placeholder={f.label}
+            />
+          </div>
+        ))}
+
+        {error && <p style={{color:'var(--danger)',fontSize:13,marginBottom:12}}>{error}</p>}
+
+        <button className="btn btn-primary w-full" onClick={handleSave} disabled={loading}>
+          {loading ? <div className="spinner"/> : '🚀 Connect Firebase'}
+        </button>
+
+        <div style={{marginTop:24}}>
+          <p style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Required Firestore Security Rules:</p>
+          <pre style={{background:'var(--bg3)',padding:12,borderRadius:8,fontSize:11,color:'var(--neon4)',overflowX:'auto',lineHeight:1.6}}>
+{`rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /listings/{id} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth.uid == resource.data.userId;
+    }
+    match /chats/{chatId}/messages/{msgId} {
+      allow read, write: if request.auth != null;
+    }
+    match /favorites/{uid}/items/{listingId} {
+      allow read, write: if request.auth.uid == uid;
+    }
+    match /users/{uid} {
+      allow read: if true;
+      allow write: if request.auth.uid == uid;
+    }
+  }
+}`}
+          </pre>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TOAST COMPONENT
+// ============================================================
+function Toast({ toast }) {
+  if (!toast) return null;
+  return <div className={`toast ${toast.type}`}>{toast.msg}</div>;
+}
+
+// ============================================================
+// AUTH MODAL
+// ============================================================
+function AuthModal({ onClose, t }) {
+  const [tab, setTab] = React.useState('login'); // 'login' | 'register'
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [displayName, setDisplayName] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [showPass, setShowPass] = React.useState(false);
+
+  const reset = () => { setEmail(''); setPassword(''); setDisplayName(''); setError(''); };
+
+  const switchTab = (t) => { setTab(t); reset(); };
+
+  const signIn = async () => {
+    if (!email || !password) { setError('Email və şifrəni daxil edin'); return; }
+    setLoading(true); setError('');
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      onClose();
+    } catch(e) {
+      const msgs = {
+        'auth/user-not-found': 'Bu email ilə hesab tapılmadı',
+        'auth/wrong-password': 'Şifrə yanlışdır',
+        'auth/invalid-email': 'Email düzgün deyil',
+        'auth/invalid-credential': 'Email və ya şifrə yanlışdır',
+      };
+      setError(msgs[e.code] || e.message);
+    } finally { setLoading(false); }
+  };
+
+  const register = async () => {
+    if (!displayName) { setError('Ad və soyadı daxil edin'); return; }
+    if (!email) { setError('Email daxil edin'); return; }
+    if (password.length < 6) { setError('Şifrə ən az 6 simvol olmalıdır'); return; }
+    setLoading(true); setError('');
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(email, password);
+      await cred.user.updateProfile({ displayName });
+      // auth listener avtomatik yeni user-i set edəcək
+      onClose();
+    } catch(e) {
+      const msgs = {
+        'auth/email-already-in-use': 'Bu email artıq istifadə olunur',
+        'auth/invalid-email': 'Email düzgün deyil',
+        'auth/weak-password': 'Şifrə çox sadədir',
+      };
+      setError(msgs[e.code] || e.message);
+    } finally { setLoading(false); }
+  };
+
+  const continueGuest = () => onClose(true);
+
+  const tabStyle = (active) => ({
+    flex: 1, padding: '10px', border: 'none', cursor: 'pointer',
+    fontFamily: "'Exo 2', sans-serif", fontSize: 14, fontWeight: 700,
+    background: active ? 'rgba(124,58,237,0.2)' : 'transparent',
+    color: active ? '#a78bfa' : 'var(--text3)',
+    borderBottom: active ? '2px solid var(--neon1)' : '2px solid transparent',
+    transition: 'all 0.2s',
+  });
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <div style={{fontFamily:'Rajdhani',fontSize:20,fontWeight:700}}>🔐 AccStore</div>
+          <button className="btn btn-ghost btn-icon" onClick={onClose}><Icons.close/></button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{display:'flex',borderBottom:'1px solid var(--border)'}}>
+          <button style={tabStyle(tab==='login')} onClick={() => switchTab('login')}>Giriş</button>
+          <button style={tabStyle(tab==='register')} onClick={() => switchTab('register')}>Qeydiyyat</button>
+        </div>
+
+        <div className="modal-body">
+          {error && (
+            <div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--danger)',marginBottom:14}}>
+              {error}
+            </div>
+          )}
+
+          {tab === 'register' && (
+            <div className="form-group">
+              <label className="label">Ad Soyad</label>
+              <input className="input" placeholder="Adınızı daxil edin" value={displayName} onChange={e => setDisplayName(e.target.value)}/>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="label">Email</label>
+            <input className="input" type="email" placeholder="example@mail.com" value={email} onChange={e => setEmail(e.target.value)}/>
+          </div>
+
+          <div className="form-group">
+            <label className="label">Şifrə</label>
+            <div style={{position:'relative'}}>
+              <input
+                className="input"
+                type={showPass ? 'text' : 'password'}
+                placeholder={tab==='register' ? 'Ən az 6 simvol' : 'Şifrənizi daxil edin'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key==='Enter' && (tab==='login' ? signIn() : register())}
+                style={{paddingRight:44}}
+              />
+              <button onClick={() => setShowPass(p=>!p)} style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text3)',fontSize:16}}>
+                {showPass ? '🙈' : '👁'}
+              </button>
+            </div>
+          </div>
+
+          <button
+            className="btn btn-primary w-full"
+            style={{marginBottom:12, padding:'12px'}}
+            onClick={tab==='login' ? signIn : register}
+            disabled={loading}
+          >
+            {loading ? <div className="spinner"/> : (tab==='login' ? '🔓 Daxil ol' : '🚀 Qeydiyyatdan keç')}
+          </button>
+
+          <div style={{display:'flex',alignItems:'center',gap:12,margin:'14px 0'}}>
+            <div style={{flex:1,height:1,background:'var(--border)'}}/>
+            <span style={{fontSize:12,color:'var(--text3)'}}>və ya</span>
+            <div style={{flex:1,height:1,background:'var(--border)'}}/>
+          </div>
+
+          <button className="btn btn-outline w-full" onClick={continueGuest} style={{padding:'11px'}}>
+            👀 {t.loginGuest}
+          </button>
+
+          <p style={{fontSize:11,color:'var(--text3)',marginTop:12,textAlign:'center',lineHeight:1.5}}>
+            Qonaq kimi yalnız elanları görə bilərsiniz.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// LISTING CARD
+// ============================================================
+function ListingCard({ listing, onClick, onFav, isFav, t }) {
+  const emoji = GAME_EMOJIS[Math.abs(listing.id.charCodeAt(0)) % GAME_EMOJIS.length];
+
+  return (
+    <div className="listing-card" onClick={() => onClick(listing)}>
+      <div className="listing-img">
+        {listing.images && listing.images[0]
+          ? <img src={listing.images[0]} alt={listing.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+          : <span>{CATEGORY_ICONS[listing.category] || emoji}</span>
+        }
+      </div>
+      <div className="listing-body">
+        <div className="listing-title">{listing.title}</div>
+        <div className="listing-price">{listing.price} ₼</div>
+        <div className="listing-meta">
+          <span className={`badge badge-purple`} style={{fontSize:10}}>
+            {CATEGORY_ICONS[listing.category]} {t.categories[listing.category] || listing.category}
+          </span>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8}}>
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <span style={{fontSize:10,color:'var(--text3)'}}>{formatDate(listing.createdAt)}</span>
+            {listing.avgRating > 0 && (
+              <span style={{fontSize:10,color:'#f59e0b',marginLeft:6}}>★ {listing.avgRating.toFixed(1)}</span>
+            )}
+          </div>
+          {onFav && (
+            <button
+              className="btn-ghost btn"
+              style={{padding:'4px',color: isFav ? 'var(--neon3)' : 'var(--text3)'}}
+              onClick={e => { e.stopPropagation(); onFav(listing.id); }}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill={isFav ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SKELETON CARD
+// ============================================================
+function SkeletonCard() {
+  return (
+    <div className="card" style={{overflow:'hidden'}}>
+      <div className="skeleton" style={{height:130}}/>
+      <div style={{padding:12}}>
+        <div className="skeleton" style={{height:14,marginBottom:8,width:'80%'}}/>
+        <div className="skeleton" style={{height:12,width:'50%',marginBottom:8}}/>
+        <div className="skeleton" style={{height:10,width:'30%'}}/>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// HOME PAGE
+// ============================================================
+function HomePage({ t, user, onListingClick, onFav, favorites }) {
+  const [listings, setListings] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [search, setSearch] = React.useState('');
+  const [category, setCategory] = React.useState('all');
+
+  React.useEffect(() => {
+    if (!db) return;
+    setLoading(true);
+    const q = db.collection('listings').orderBy('createdAt', 'desc').limit(50);
+    const unsub = q.onSnapshot(snap => {
+      setListings(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    }, () => setLoading(false));
+    return unsub;
+  }, []);
+
+  const filtered = listings.filter(l => {
+    const q = search.toLowerCase();
+    const matchSearch = !search ||
+      l.title.toLowerCase().includes(q) ||
+      (l.description || '').toLowerCase().includes(q) ||
+      (t.categories[l.category] || l.category || '').toLowerCase().includes(q);
+    const matchCat = category === 'all' || l.category === category;
+    return matchSearch && matchCat;
+  });
+
+  return (
+    <div className="page">
+      <div className="container">
+        <div style={{padding:'16px 0 4px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <h1 style={{fontFamily:'Rajdhani',fontSize:26,fontWeight:700,background:'var(--grad1)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',marginBottom:2}}>{t.appName}</h1>
+            <p style={{fontSize:13,color:'var(--text3)'}}>{t.tagline}</p>
+          </div>
+          <div style={{fontSize:12,color:'var(--text3)',textAlign:'right'}}>
+            <span style={{color:'var(--neon1)',fontWeight:700,fontSize:16}}>{filtered?.length || 0}</span><br/>elan
+          </div>
+        </div>
+
+        <div className="search-bar">
+          <div className="search-bar-inner">
+            <span className="search-icon"><Icons.search/></span>
+            <input
+              className="input"
+              placeholder={t.search}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:18,lineHeight:1}}
+              >×</button>
+            )}
+          </div>
+        </div>
+
+        <div className="chips">
+          <div className={`chip ${category === 'all' ? 'active' : ''}`} onClick={() => setCategory('all')}>
+            🎮 {t.categories.all}
+          </div>
+          {CATEGORIES.map(cat => (
+            <div key={cat} className={`chip ${category === cat ? 'active' : ''}`} onClick={() => setCategory(cat)}>
+              {CATEGORY_ICONS[cat]} {t.categories[cat]}
+            </div>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="listings-grid">
+            {Array(6).fill(0).map((_,i) => <SkeletonCard key={i}/>)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">🔍</div>
+            <div className="empty-title">{t.noResults}</div>
+            <div className="empty-sub">Başqa açar söz cəhd edin</div>
+          </div>
+        ) : (
+          <>
+            {/* VIP Elanlar */}
+            {filtered.filter(l => l.isVip).length > 0 && (
+              <div className="vip-section">
+                <div className="vip-section-title">
+                  <span>⭐</span> VIP Elanlar
+                </div>
+                <div className="vip-grid">
+                  {filtered.filter(l => l.isVip).map(l => (
+                    <div key={l.id} className="vip-card" onClick={() => onListingClick(l)}>
+                      <div className="vip-badge">⭐ VIP</div>
+                      <div style={{width:'100%',height:150,overflow:'hidden',background:'var(--bg3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        {l.images && l.images.length > 0
+                          ? <img src={l.images[0]} alt={l.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                          : <span style={{fontSize:40}}>{CATEGORY_ICONS[l.category]||'🎮'}</span>
+                        }
+                      </div>
+                      <div style={{padding:12}}>
+                        <div style={{fontWeight:700,fontSize:13,marginBottom:4,lineHeight:1.3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{l.title}</div>
+                        <div style={{fontFamily:'Rajdhani',fontSize:18,fontWeight:700,color:'#f59e0b'}}>{l.price} ₼</div>
+                        <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>{CATEGORY_ICONS[l.category]} {t.categories[l.category]}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bütün Elanlar */}
+            {filtered.filter(l => !l.isVip).length > 0 && (
+              <>
+                {filtered.filter(l => l.isVip).length > 0 && (
+                  <div style={{fontFamily:'Rajdhani',fontSize:16,fontWeight:700,color:'var(--text2)',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+                    <span>📋</span> Bütün Elanlar
+                  </div>
+                )}
+                <div className="listings-grid">
+                  {filtered.filter(l => !l.isVip).map(l => (
+                    <ListingCard
+                      key={l.id}
+                      listing={l}
+                      onClick={onListingClick}
+                      onFav={user && !user.isGuest ? onFav : null}
+                      isFav={favorites.includes(l.id)}
+                      t={t}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// LISTING DETAIL PAGE
+// ============================================================
+function ListingDetailPage({ listing, onBack, user, onFav, isFav, t, showToast, onOpenChat }) {
+  const [mainImg, setMainImg] = React.useState(0);
+  const [showDelete, setShowDelete] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const [editing, setEditing] = React.useState(false);
+  const [lightbox, setLightbox] = React.useState(null);
+  const [userRating, setUserRating] = React.useState(0);
+  const [avgRating, setAvgRating] = React.useState(listing.avgRating || 0);
+  const [ratingCount, setRatingCount] = React.useState(listing.ratingCount || 0);
+  const [ratingDone, setRatingDone] = React.useState(false);
+
+  const isOwner = user && !user.isGuest && user.uid === listing.userId;
+
+  // İstifadəçinin əvvəlki reytinqini yüklə
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db || !listing.id) return;
+    db.collection('listings').doc(listing.id)
+      .collection('ratings').doc(user.uid)
+      .get().then(doc => {
+        if (doc.exists) { setUserRating(doc.data().value); setRatingDone(true); }
+      });
+  }, [listing.id, user]);
+
+  const submitRating = async (val) => {
+    if (!user || user.isGuest || isOwner) return;
+    setUserRating(val);
+    setRatingDone(true);
+    try {
+      const ratingRef = db.collection('listings').doc(listing.id).collection('ratings').doc(user.uid);
+      await ratingRef.set({ value: val, uid: user.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      // Ortalama hesabla
+      const snap = await db.collection('listings').doc(listing.id).collection('ratings').get();
+      const vals = snap.docs.map(d => d.data().value);
+      const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+      const count = vals.length;
+      await db.collection('listings').doc(listing.id).update({ avgRating: avg, ratingCount: count });
+      setAvgRating(avg);
+      setRatingCount(count);
+      showToast('Reytinq verildi!', 'success');
+    } catch(e) { console.error(e); }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await db.collection('listings').doc(listing.id).delete();
+      showToast(t.deleted, 'success');
+      onBack();
+    } catch(e) {
+      showToast(t.error, 'error');
+    }
+    setDeleting(false);
+  };
+
+  if (editing) {
+    return <EditListingPage listing={listing} onBack={() => setEditing(false)} t={t} showToast={showToast} user={user}/>;
+  }
+
+  return (
+    <div className="page">
+      <div className="container">
+        <button className="btn btn-ghost" style={{marginBottom:12}} onClick={onBack}>
+          <Icons.back/> Geri
+        </button>
+
+        {/* Main Image */}
+        <div className="detail-img" style={{cursor: listing.images && listing.images.length > 0 ? 'zoom-in' : 'default'}}
+          onClick={() => listing.images && listing.images.length > 0 && setLightbox(mainImg)}>
+          {listing.images && listing.images.length > 0
+            ? <img src={listing.images[mainImg]} alt={listing.title} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:12}}/>
+            : <span style={{fontSize:60}}>{CATEGORY_ICONS[listing.category] || '🎮'}</span>
+          }
+          {listing.images && listing.images.length > 0 && (
+            <div style={{position:'absolute',bottom:8,right:8,background:'rgba(0,0,0,0.5)',borderRadius:6,padding:'4px 8px',fontSize:11,color:'white',backdropFilter:'blur(4px)'}}>
+              🔍 Böyüt
+            </div>
+          )}
+        </div>
+
+        {/* Image Gallery */}
+        {listing.images && listing.images.length > 1 && (
+          <div className="img-gallery">
+            {listing.images.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                alt={`img-${i}`}
+                className={mainImg === i ? 'active' : ''}
+                onClick={() => setMainImg(i)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Lightbox */}
+        {lightbox !== null && listing.images && (
+          <div
+            style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.95)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}
+            onClick={() => setLightbox(null)}
+          >
+            <img
+              src={listing.images[lightbox]}
+              alt="fullscreen"
+              style={{maxWidth:'95vw',maxHeight:'85vh',objectFit:'contain',borderRadius:8}}
+              onClick={e => e.stopPropagation()}
+            />
+            {/* Naviqasiya */}
+            {listing.images.length > 1 && (
+              <div style={{display:'flex',gap:16,marginTop:16}} onClick={e => e.stopPropagation()}>
+                {listing.images.map((_, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setLightbox(i)}
+                    style={{width:8,height:8,borderRadius:'50%',background: i===lightbox ? 'white' : 'rgba(255,255,255,0.3)',cursor:'pointer',transition:'background 0.2s'}}
+                  />
+                ))}
+              </div>
+            )}
+            {listing.images.length > 1 && (
+              <>
+                <button
+                  onClick={e => { e.stopPropagation(); setLightbox(i => (i - 1 + listing.images.length) % listing.images.length); }}
+                  style={{position:'fixed',left:16,top:'50%',transform:'translateY(-50%)',background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',width:44,height:44,color:'white',fontSize:20,cursor:'pointer',backdropFilter:'blur(4px)'}}
+                >‹</button>
+                <button
+                  onClick={e => { e.stopPropagation(); setLightbox(i => (i + 1) % listing.images.length); }}
+                  style={{position:'fixed',right:16,top:'50%',transform:'translateY(-50%)',background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',width:44,height:44,color:'white',fontSize:20,cursor:'pointer',backdropFilter:'blur(4px)'}}
+                >›</button>
+              </>
+            )}
+            <button
+              onClick={() => setLightbox(null)}
+              style={{position:'fixed',top:16,right:16,background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',width:40,height:40,color:'white',fontSize:18,cursor:'pointer',backdropFilter:'blur(4px)'}}
+            >✕</button>
+          </div>
+        )}
+
+        {/* Title + Price + Actions — birləşdirilmiş blok */}
+        <div className="card" style={{padding:16,marginBottom:12}}>
+
+          {/* Başlıq + Kateqoriya + Sevilmişlər */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+            <div style={{flex:1,paddingRight:8}}>
+              <h1 style={{fontFamily:'Rajdhani',fontSize:22,fontWeight:700,lineHeight:1.2,marginBottom:6}}>{listing.title}</h1>
+              <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                <span className="badge badge-purple" style={{fontSize:11}}>
+                  {CATEGORY_ICONS[listing.category]} {t.categories[listing.category]}
+                </span>
+                {avgRating > 0 && (
+                  <span style={{fontSize:12,color:'#f59e0b',display:'flex',alignItems:'center',gap:3}}>
+                    ★ <span style={{fontWeight:700}}>{avgRating.toFixed(1)}</span>
+                    <span style={{color:'var(--text3)',fontSize:11}}>({ratingCount})</span>
+                  </span>
+                )}
+              </div>
+            </div>
+            {user && !user.isGuest && (
+              <button
+                onClick={() => onFav(listing.id)}
+                style={{background:'none',border:'none',cursor:'pointer',padding:4,color: isFav ? 'var(--neon3)' : 'var(--text3)',flexShrink:0}}
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" fill={isFav ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Qiymət */}
+          <div style={{marginBottom:14,paddingBottom:14,borderBottom:'1px solid var(--border)'}}>
+            <span style={{fontFamily:'Rajdhani',fontSize:30,fontWeight:700,background:'var(--grad1)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+              {listing.price} ₼
+            </span>
+          </div>
+
+          {/* Satıcı + Tarix */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:36,height:36,borderRadius:'50%',background:'var(--grad1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,color:'white',flexShrink:0}}>
+                {(listing.sellerName||listing.sellerEmail||'U')[0].toUpperCase()}
+              </div>
+              <div>
+                <div style={{fontWeight:600,fontSize:13}}>{listing.sellerName || 'Anonymous'}</div>
+                <div style={{fontSize:11,color:'var(--text3)'}}>{formatDate(listing.createdAt)}</div>
+              </div>
+            </div>
+            {listing.phone && (
+              <a href={`tel:${listing.phone}`} style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'var(--neon4)',textDecoration:'none',background:'rgba(6,182,212,0.08)',border:'1px solid rgba(6,182,212,0.2)',borderRadius:8,padding:'5px 10px'}}>
+                <Icons.phone/> {listing.phone}
+              </a>
+            )}
+          </div>
+
+          {/* Action düymələri */}
+          {isOwner ? (
+            <div style={{display:'flex',gap:8}}>
+              <button className="btn btn-outline" style={{flex:1,padding:'8px 12px',fontSize:13}} onClick={() => setEditing(true)}>
+                <Icons.edit/> {t.edit}
+              </button>
+              <button className="btn btn-danger" style={{padding:'8px 14px',fontSize:13}} onClick={() => setShowDelete(true)}>
+                <Icons.trash/> {t.delete}
+              </button>
+            </div>
+          ) : user && !user.isGuest ? (
+            <button className="btn btn-primary" style={{padding:'6px 14px',fontSize:12,borderRadius:8}} onClick={() => onOpenChat(listing)}>
+              <Icons.chat/> {t.sendMsg}
+            </button>
+          ) : (
+            <div style={{textAlign:'center',padding:'8px 0',fontSize:13,color:'var(--text3)'}}>
+              🔒 {t.loginToChat}
+            </div>
+          )}
+        </div>
+
+        {/* Açıqlama */}
+        {listing.description && (
+          <div className="card" style={{padding:14,marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:600,color:'var(--text3)',marginBottom:6,textTransform:'uppercase',letterSpacing:1}}>Açıqlama</div>
+            <p style={{fontSize:14,color:'var(--text2)',lineHeight:1.7}}>{listing.description}</p>
+          </div>
+        )}
+
+        {/* Reytinq */}
+        <div className="card" style={{padding:14,marginBottom:12}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+            <div style={{fontSize:12,fontWeight:600,color:'var(--text3)',textTransform:'uppercase',letterSpacing:1}}>Reytinq</div>
+            {ratingCount > 0 && (
+              <div style={{fontSize:12,color:'var(--text3)'}}>
+                <span style={{color:'#f59e0b',fontWeight:700}}>{avgRating.toFixed(1)}</span> / 5 · {ratingCount} qiymət
+              </div>
+            )}
+          </div>
+          {!isOwner && user && !user.isGuest ? (
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <StarRating value={userRating} onChange={submitRating} readonly={ratingDone} size={24}/>
+              {ratingDone && <span style={{fontSize:12,color:'var(--success)'}}>✓ Qiymətləndirildi</span>}
+            </div>
+          ) : isOwner ? (
+            <div style={{fontSize:12,color:'var(--text3)'}}>Öz elanınıza qiymət verə bilməzsiniz</div>
+          ) : (
+            <div style={{fontSize:12,color:'var(--text3)'}}>Qiymət vermək üçün daxil olun</div>
+          )}
+        </div>
+      </div>
+
+      {/* Delete Confirm Modal */}
+      {showDelete && (
+        <div className="modal-overlay">
+          <div className="modal" style={{maxWidth:360}}>
+            <div className="modal-body" style={{textAlign:'center'}}>
+              <div style={{fontSize:40,marginBottom:12}}>⚠️</div>
+              <p style={{fontSize:15,fontWeight:600,marginBottom:8}}>{t.confirmDelete}</p>
+              <div style={{display:'flex',gap:10,marginTop:20}}>
+                <button className="btn btn-outline w-full" onClick={() => setShowDelete(false)}>{t.no}</button>
+                <button className="btn btn-danger w-full" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? <div className="spinner"/> : t.yes}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// EDIT LISTING PAGE
+// ============================================================
+function EditListingPage({ listing, onBack, t, showToast, user }) {
+  const [form, setForm] = React.useState({
+    title: listing.title || '',
+    description: listing.description || '',
+    price: listing.price || '',
+    category: listing.category || 'other',
+    phone: listing.phone || '',
+  });
+  const [saving, setSaving] = React.useState(false);
+
+  const handleSave = async () => {
+    if (!form.title || !form.price) return;
+    setSaving(true);
+    try {
+      await db.collection('listings').doc(listing.id).update({
+        title: form.title,
+        description: form.description,
+        price: Number(form.price),
+        category: form.category,
+        phone: form.phone,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      showToast(t.saved, 'success');
+      onBack();
+    } catch(e) {
+      showToast(t.error, 'error');
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="page">
+      <div className="container">
+        <button className="btn btn-ghost" style={{marginBottom:12}} onClick={onBack}>
+          <Icons.back/> {t.cancel}
+        </button>
+        <h2 className="section-title">{t.editListing}</h2>
+
+        <div className="form-group">
+          <label className="label">{t.title}</label>
+          <input className="input" value={form.title} onChange={e => setForm(p=>({...p,title:e.target.value}))}/>
+        </div>
+        <div className="form-group">
+          <label className="label">{t.description}</label>
+          <textarea className="input" value={form.description} onChange={e => setForm(p=>({...p,description:e.target.value}))}/>
+        </div>
+        <div style={{display:'flex',gap:12}}>
+          <div className="form-group" style={{flex:1}}>
+            <label className="label">{t.price}</label>
+            <input className="input" type="number" value={form.price} onChange={e => setForm(p=>({...p,price:e.target.value}))}/>
+          </div>
+          <div className="form-group" style={{flex:1}}>
+            <label className="label">{t.category}</label>
+            <select className="input" value={form.category} onChange={e => setForm(p=>({...p,category:e.target.value}))}>
+              {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="label">{t.phone}</label>
+          <input className="input" value={form.phone} onChange={e => setForm(p=>({...p,phone:e.target.value}))}/>
+        </div>
+        <button className="btn btn-primary w-full" onClick={handleSave} disabled={saving}>
+          {saving ? <div className="spinner"/> : <><Icons.check/> {t.save}</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// CREATE LISTING PAGE
+// ============================================================
+function CreateListingPage({ t, user, showToast, onDone }) {
+  const [form, setForm] = React.useState({
+    title: '', description: '', price: '', category: 'other', phone: '', isVip: false
+  });
+  const [images, setImages] = React.useState([]);
+  const [imageFiles, setImageFiles] = React.useState([]);
+  const [uploading, setUploading] = React.useState(false);
+  const [vipCredits, setVipCredits] = React.useState(0);
+  const [showVipFromCreate, setShowVipFromCreate] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) return;
+    db.collection('users').doc(user.uid).get().then(doc => {
+      if (doc.exists) setVipCredits(doc.data().balance || 0);
+    });
+  }, []);
+
+  const handleImages = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + imageFiles.length > 10) {
+      showToast('Maksimum 10 şəkil', 'error');
+      return;
+    }
+    const newPreviews = files.map(f => URL.createObjectURL(f));
+    setImages(p => [...p, ...newPreviews]);
+    setImageFiles(p => [...p, ...files]);
+  };
+
+  const removeImg = (i) => {
+    setImages(p => p.filter((_,idx) => idx !== i));
+    setImageFiles(p => p.filter((_,idx) => idx !== i));
+  };
+
+  const compressImage = (file) => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 600;
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+        else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const handleSubmit = async () => {
+    if (!form.title || !form.price) {
+      showToast('Başlıq və qiymət tələb olunur', 'error');
+      return;
+    }
+    // VIP seçilibsə balansı yoxla
+    if (form.isVip) {
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      const bal = userDoc.exists ? (userDoc.data().balance || 0) : 0;
+      if (bal < VIP_PRICE_AZN) {
+        showToast(`VIP üçün balansınız kifayət deyil. Lazım: ${VIP_PRICE_AZN} ₼, Balans: ${bal.toFixed(2)} ₼`, 'error');
+        setForm(p => ({...p, isVip: false}));
+        return;
+      }
+    }
+    setUploading(true);
+    try {
+      const base64Images = await Promise.all(imageFiles.map(compressImage));
+      const docRef = db.collection('listings').doc();
+      await docRef.set({
+        title: form.title,
+        description: form.description,
+        price: Number(form.price),
+        category: form.category,
+        phone: form.phone,
+        images: base64Images,
+        userId: user.uid,
+        sellerEmail: user.email,
+        sellerName: user.displayName || (user.email || '').split('@')[0] || 'User',
+        isVip: form.isVip || false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      // VIP seçilibsə balansdan çıx
+      if (form.isVip) {
+        await db.collection('users').doc(user.uid).set(
+          { balance: firebase.firestore.FieldValue.increment(-VIP_PRICE_AZN) }, { merge: true }
+        );
+        await db.collection('transactions').add({
+          uid: user.uid, type: 'vip', amount: -VIP_PRICE_AZN,
+          description: 'VIP elan: ' + form.title,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+      showToast(t.saved, 'success');
+      setForm({ title:'', description:'', price:'', category:'other', phone:'', isVip: false });
+      setImages([]); setImageFiles([]);
+      onDone();
+    } catch(e) {
+      showToast(t.error + ': ' + e.message, 'error');
+    }
+    setUploading(false);
+  };
+
+  if (!user || user.isGuest) {
+    return (
+      <div className="page">
+        <div className="container">
+          <div className="signin-prompt" style={{marginTop:60}}>
+            <div style={{fontSize:40,marginBottom:12}}>🔒</div>
+            <p style={{fontSize:15,fontWeight:600,marginBottom:4}}>{t.loginToPost}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <div className="container">
+        <h2 className="section-title">{t.createListing}</h2>
+
+        <div className="form-group">
+          <label className="label">{t.title} *</label>
+          <input className="input" value={form.title} onChange={e => setForm(p=>({...p,title:e.target.value}))} placeholder="e.g. League of Legends Diamond 2 Account"/>
+        </div>
+
+        <div className="form-group">
+          <label className="label">{t.description}</label>
+          <textarea className="input" value={form.description} onChange={e => setForm(p=>({...p,description:e.target.value}))} placeholder="Account details, champions, skins, rank..."/>
+        </div>
+
+        <div style={{display:'flex',gap:12}}>
+          <div className="form-group" style={{flex:1}}>
+            <label className="label">{t.price} *</label>
+            <input className="input" type="number" value={form.price} onChange={e => setForm(p=>({...p,price:e.target.value}))} placeholder="0"/>
+          </div>
+          <div className="form-group" style={{flex:1}}>
+            <label className="label">{t.category}</label>
+            <select className="input" value={form.category} onChange={e => setForm(p=>({...p,category:e.target.value}))}>
+              {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="label">{t.phone}</label>
+          <input className="input" value={form.phone} onChange={e => setForm(p=>({...p,phone:e.target.value}))} placeholder="+994 XX XXX XX XX"/>
+        </div>
+
+        {/* VIP seçimi */}
+        <div className="form-group">
+          <div
+            onClick={() => setForm(p => ({...p, isVip: !p.isVip}))}
+            style={{
+              display:'flex', alignItems:'center', gap:12, padding:'14px 16px',
+              borderRadius:12, cursor:'pointer', transition:'all 0.2s',
+              border: form.isVip ? '1.5px solid #f59e0b' : '1.5px solid var(--border)',
+              background: form.isVip ? 'rgba(245,158,11,0.08)' : 'var(--bg3)',
+            }}
+          >
+            <div style={{
+              width:22, height:22, borderRadius:6, flexShrink:0,
+              background: form.isVip ? '#f59e0b' : 'transparent',
+              border: form.isVip ? '2px solid #f59e0b' : '2px solid var(--border2)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:13, color:'white', fontWeight:700,
+            }}>
+              {form.isVip && '✓'}
+            </div>
+            <div>
+              <div style={{fontWeight:700,fontSize:14,color: form.isVip ? '#f59e0b' : 'var(--text)'}}>⭐ VIP Elan</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>Elanınız ana səhifədə üstdə, xüsusi çərçivədə görünür</div>
+            </div>
+          </div>
+        </div>
+
+        {/* VIP Toggle */}
+        <div
+          className={`vip-toggle ${form.isVip ? 'active' : ''}`}
+          onClick={() => {
+            if (vipCredits >= VIP_PRICE_AZN) {
+              setForm(p => ({...p, isVip: !p.isVip}));
+            } else {
+              showToast(`VIP üçün balans lazımdır: ${VIP_PRICE_AZN} ₼. Cüzdandan balans artırın.`, 'error');
+              setForm(p => ({...p, isVip: false}));
+            }
+          }}
+          style={{opacity: 1, cursor: vipCredits >= VIP_PRICE_AZN ? 'pointer' : 'not-allowed'}}
+        >
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:14,color: form.isVip ? '#f59e0b' : 'var(--text2)',marginBottom:2}}>⭐ VIP Elan</div>
+            <div style={{fontSize:12,color: vipCredits >= VIP_PRICE_AZN ? 'var(--text3)' : 'var(--danger)'}}>
+              {vipCredits >= VIP_PRICE_AZN ? `Balans: ${vipCredits.toFixed(2)} ₼ · VIP: ${VIP_PRICE_AZN} ₼` : `Balans kifayət deyil · Lazım: ${VIP_PRICE_AZN} ₼`}
+            </div>
+          </div>
+          {vipCredits >= VIP_PRICE_AZN
+            ? <div className={`vip-switch ${form.isVip ? 'on' : ''}`}/>
+            : <div style={{background:'rgba(239,68,68,0.15)',color:'var(--danger)',borderRadius:8,padding:'5px 10px',fontSize:11,fontWeight:700,flexShrink:0}}>🔒</div>
+          }
+        </div>
+
+        <div className="form-group">
+          <label className="label">{t.uploadImages}</label>
+          <label className="upload-zone">
+            <input type="file" accept="image/*" multiple style={{display:'none'}} onChange={handleImages}/>
+            <div style={{fontSize:28,lineHeight:1,flexShrink:0}}>📷</div>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:'var(--text2)',marginBottom:2}}>{t.uploadHint}</div>
+              <div style={{fontSize:11,color:'var(--text3)'}}>{images.length}/10 şəkil seçildi</div>
+            </div>
+            <div style={{marginLeft:'auto',background:'var(--grad1)',color:'white',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,flexShrink:0}}>Seç</div>
+          </label>
+          {images.length > 0 && (
+            <div className="img-preview-grid">
+              {images.map((src, i) => (
+                <div key={i} className="img-preview-item">
+                  <img src={src} alt={`preview-${i}`}/>
+                  <div className="img-preview-remove" onClick={() => removeImg(i)}>✕</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button className="btn btn-primary" onClick={handleSubmit} disabled={uploading} style={{padding:'9px 24px',fontSize:13,display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
+          {uploading ? <><div className="spinner"/> Yüklənir...</> : <><Icons.check/> {t.submit}</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// CHAT PAGE (rooms list + individual chat)
+// ============================================================
+function ChatPage({ t, user, showToast, initialListing }) {
+  const [rooms, setRooms] = React.useState([]);
+  const [buyerRooms, setBuyerRooms] = React.useState([]);
+  const [sellerRooms, setSellerRooms] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [activeRoom, setActiveRoom] = React.useState(null);
+
+  React.useEffect(() => {
+    if (initialListing && user && !user.isGuest) {
+      const sellerId = initialListing.userId || '';
+      const buyerId = user.uid;
+      // Unikal room ID: listingId + hər iki tərəfin uid-i
+      const roomId = [initialListing.id, sellerId, buyerId].filter(Boolean).sort().join('_');
+      setActiveRoom({
+        id: roomId,
+        listing: initialListing,
+        sellerId,
+        buyerId,
+        participants: [sellerId, buyerId].filter(Boolean),
+      });
+    }
+  }, [initialListing]);
+
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) { setLoading(false); return; }
+
+    // Həm alıcı həm satıcı kimi iştirak etdiyi chatları əldə et
+    const unsubBuyer = db.collection('chats')
+      .where('buyerId', '==', user.uid)
+      .onSnapshot(snap => {
+        setBuyerRooms(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, e => console.error('buyer chats:', e));
+
+    const unsubSeller = db.collection('chats')
+      .where('sellerId', '==', user.uid)
+      .onSnapshot(snap => {
+        setSellerRooms(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setLoading(false);
+      }, e => { console.error('seller chats:', e); setLoading(false); });
+
+    return () => { unsubBuyer(); unsubSeller(); };
+  }, [user]);
+
+  // Hər iki siyahını birləşdir
+  React.useEffect(() => {
+    const map = new Map();
+    [...buyerRooms, ...sellerRooms].forEach(r => map.set(r.id, r));
+    const merged = Array.from(map.values());
+    merged.sort((a,b) => (b.lastMessageAt?.toMillis?.() || 0) - (a.lastMessageAt?.toMillis?.() || 0));
+    setRooms(merged);
+  }, [buyerRooms, sellerRooms]);
+
+  if (!user || user.isGuest) {
+    return (
+      <div className="page">
+        <div className="container">
+          <div className="signin-prompt" style={{marginTop:60}}>
+            <div style={{fontSize:40,marginBottom:12}}>💬</div>
+            <p style={{fontSize:15,fontWeight:600}}>{t.loginToChat}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const openRoom = async (room) => {
+    // Əgər listing məlumatı yoxdursa Firestore-dan yüklə
+    if (!room.listing && room.listingId && db) {
+      try {
+        const doc = await db.collection('listings').doc(room.listingId).get();
+        if (doc.exists) {
+          room = { ...room, listing: { id: doc.id, ...doc.data() } };
+        }
+      } catch(e) { console.error(e); }
+    }
+    setActiveRoom(room);
+  };
+
+  if (activeRoom) {
+    return <ChatRoom room={activeRoom} user={user} t={t} onBack={() => setActiveRoom(null)}/>;
+  }
+
+  return (
+    <div className="page">
+      <div className="container" style={{padding:'0 0 16px'}}>
+        <div style={{padding:'0 16px 12px'}}>
+          <h2 className="section-title" style={{marginBottom:0}}>{t.chat}</h2>
+        </div>
+
+        {loading ? (
+          <div style={{display:'flex',justifyContent:'center',padding:40}}>
+            <div className="spinner spinner-lg"/>
+          </div>
+        ) : rooms.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">💬</div>
+            <div className="empty-title">{t.noChats}</div>
+            <div className="empty-sub">{t.chatHint}</div>
+          </div>
+        ) : (
+          rooms.map(room => (
+            <div key={room.id} className="chat-room-item" onClick={() => openRoom(room)}>
+              <div style={{width:44,height:44,borderRadius:10,background:'var(--grad1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>
+                {CATEGORY_ICONS[room.listingCategory] || '🎮'}
+              </div>
+              <div style={{flex:1,overflow:'hidden'}}>
+                <div style={{fontWeight:600,fontSize:14,marginBottom:2}} className="truncate">
+                  {room.listingTitle || 'Chat'}
+                </div>
+                <div style={{fontSize:12,color:'var(--text3)'}} className="truncate">
+                  {room.lastMessage || '...'}
+                </div>
+              </div>
+              <div style={{fontSize:11,color:'var(--text3)',textAlign:'right',flexShrink:0}}>
+                {room.lastMessageAt ? formatTime(room.lastMessageAt) : ''}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// CHAT ROOM
+// ============================================================
+function ChatRoom({ room, user, t, onBack }) {
+  const [messages, setMessages] = React.useState([]);
+  const [text, setText] = React.useState('');
+  const [sending, setSending] = React.useState(false);
+  const messagesEndRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!db || !room.id) return;
+    const q = db.collection('chats').doc(room.id).collection('messages').orderBy('createdAt', 'asc');
+    const unsub = q.onSnapshot(snap => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    });
+    return unsub;
+  }, [room.id]);
+
+  const sendMessage = async () => {
+    if (!text.trim() || sending) return;
+    setSending(true);
+    const msg = text.trim();
+    setText('');
+    try {
+      const batch = db.batch();
+      const msgRef = db.collection('chats').doc(room.id).collection('messages').doc();
+      batch.set(msgRef, {
+        text: msg,
+        senderId: user.uid,
+        senderEmail: user.email,
+        senderName: user.displayName || (user.email || '').split('@')[0] || 'User',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      const chatRef = db.collection('chats').doc(room.id);
+      const listing = room.listing || {};
+      // sellerId və buyerId room-dan gəlir, dəyişdirilmir
+      const sellerId = room.sellerId || listing.userId || '';
+      const buyerId = room.buyerId || (user.uid !== sellerId ? user.uid : '');
+      batch.set(chatRef, {
+        sellerId: sellerId,
+        buyerId: buyerId,
+        participants: [sellerId, buyerId].filter(Boolean),
+        listingId: room.listingId || listing.id || '',
+        listingTitle: room.listingTitle || listing.title || '',
+        listingCategory: room.listingCategory || listing.category || '',
+        lastMessage: msg,
+        lastSenderId: user.uid,
+        lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      await batch.commit();
+    } catch(e) {
+      console.error(e);
+    }
+    setSending(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  return (
+    <div className="page" style={{display:'flex',flexDirection:'column',height:'100vh',paddingBottom:0}}>
+      {/* Header */}
+      <div style={{padding:'8px 16px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10}}>
+        <button className="btn btn-ghost btn-icon" onClick={onBack}><Icons.back/></button>
+        <div>
+          <div style={{fontWeight:700,fontSize:14}}>{room.listingTitle || room.listing?.title || 'Chat'}</div>
+          <div style={{fontSize:11,color:'var(--success)',display:'flex',alignItems:'center',gap:4}}>
+            <div className="notif-dot" style={{background:'var(--success)'}}/>
+            {t.online}
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="chat-messages" style={{flex:1,paddingBottom:80}}>
+        {messages.length === 0 && (
+          <div style={{textAlign:'center',color:'var(--text3)',fontSize:13,marginTop:40}}>
+            👋 Söhbəti başladın!
+          </div>
+        )}
+        {messages.map(msg => (
+          <div key={msg.id} className={`msg ${msg.senderId === user.uid ? 'mine' : 'theirs'}`}>
+            <div>{msg.text}</div>
+            <div className="msg-meta">
+              {msg.senderId !== user.uid && <span>{msg.senderName} · </span>}
+              {formatTime(msg.createdAt)}
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef}/>
+      </div>
+
+      {/* Input */}
+      <div className="chat-input-bar" style={{position:'fixed',bottom:65,left:0,right:0,background:'rgba(10,10,26,0.98)',backdropFilter:'blur(20px)'}}>
+        <input
+          className="input"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={t.typeMsg}
+          style={{flex:1}}
+        />
+        <button className="btn btn-primary btn-icon" onClick={sendMessage} disabled={sending || !text.trim()} style={{width:38,height:38,padding:0,flexShrink:0}}>
+          {sending ? <div className="spinner"/> : <Icons.send/>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// FAVORITES PAGE
+// ============================================================
+function FavoritesPage({ t, user, favorites, onListingClick, onFav }) {
+  const [listings, setListings] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db || favorites.length === 0) {
+      setLoading(false);
+      setListings([]);
+      return;
+    }
+    setLoading(true);
+    const fetch = async () => {
+      try {
+        const chunks = [];
+        for (let i = 0; i < favorites.length; i += 10) {
+          chunks.push(favorites.slice(i, i + 10));
+        }
+        const results = [];
+        for (const chunk of chunks) {
+          const snap = await db.collection('listings').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
+          snap.docs.forEach(d => results.push({ id: d.id, ...d.data() }));
+        }
+        setListings(results);
+      } catch(e) { console.error(e); }
+      setLoading(false);
+    };
+    fetch();
+  }, [favorites, user]);
+
+  if (!user || user.isGuest) {
+    return (
+      <div className="page">
+        <div className="container">
+          <div className="signin-prompt" style={{marginTop:60}}>
+            <div style={{fontSize:40,marginBottom:12}}>❤️</div>
+            <p style={{fontSize:15,fontWeight:600}}>{t.loginToFav}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <div className="container">
+        <h2 className="section-title">{t.favorites}</h2>
+
+        {loading ? (
+          <div className="listings-grid">
+            {Array(4).fill(0).map((_,i) => <SkeletonCard key={i}/>)}
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">❤️</div>
+            <div className="empty-title">{t.noFavorites}</div>
+            <div className="empty-sub">Bəyəndiyiniz elanları saxlayın</div>
+          </div>
+        ) : (
+          <div className="listings-grid">
+            {listings.map(l => (
+              <ListingCard
+                key={l.id}
+                listing={l}
+                onClick={onListingClick}
+                onFav={onFav}
+                isFav={true}
+                t={t}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// PROFILE PAGE
+// ============================================================
+function ProfilePage({ t, user, onLogout, showToast, setShowDeposit }) {
+  const [listings, setListings] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [deleting, setDeleting] = React.useState(null);
+  const [favCount, setFavCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) { setLoading(false); return; }
+    const q = db.collection('listings').where('userId', '==', user.uid);
+    const unsub = q.onSnapshot(snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      data.sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      setListings(data);
+      setLoading(false);
+    }, (e) => { console.error(e); setLoading(false); });
+
+    // Count favorites
+    db.collection('favorites').doc(user.uid).collection('items').get()
+      .then(s => setFavCount(s.size)).catch(() => {});
+
+    return unsub;
+  }, [user]);
+
+  const handleDelete = async (id) => {
+    setDeleting(id);
+    try {
+      await db.collection('listings').doc(id).delete();
+      showToast(t.deleted, 'success');
+    } catch(e) {
+      showToast(t.error, 'error');
+    }
+    setDeleting(null);
+  };
+
+  if (!user) return null;
+
+  if (user.isGuest) {
+    return (
+      <div className="page">
+        <div className="container" style={{textAlign:'center',paddingTop:40}}>
+          <div className="avatar" style={{margin:'0 auto 16px'}}>👤</div>
+          <h2 style={{fontFamily:'Rajdhani',fontSize:22,marginBottom:8}}>Qonaq rejimi</h2>
+          <p style={{color:'var(--text2)',fontSize:14,marginBottom:24}}>{t.guestWarning}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const initials = (user.displayName || user.email || 'U').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const [balance, setBalance] = React.useState(0);
+  const [transactions, setTransactions] = React.useState([]);
+
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) return;
+    const unsub = db.collection('users').doc(user.uid).onSnapshot(doc => {
+      if (doc.exists) setBalance(doc.data().balance || 0);
+    });
+    const unsub2 = db.collection('transactions')
+      .where('uid', '==', user.uid)
+      .orderBy('createdAt', 'desc').limit(10)
+      .onSnapshot(snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => { unsub(); unsub2(); };
+  }, [user]);
+  const [profileBalance, setProfileBalance] = React.useState(0);
+  React.useEffect(() => {
+    if (!db || !user) return;
+    db.collection('users').doc(user.uid).onSnapshot(doc => {
+      if (doc.exists) setProfileBalance(doc.data().balance || 0);
+    });
+  }, []);
+
+  return (
+    <div className="page">
+      <div className="container">
+        {/* Profile Header */}
+        <div className="card" style={{padding:20,marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:16}}>
+            <div>
+              {user.photoURL
+                ? <img src={user.photoURL} alt="avatar" style={{width:72,height:72,borderRadius:'50%',border:'3px solid var(--neon1)',boxShadow:'var(--glow)'}}/>
+                : <div className="avatar">{initials}</div>
+              }
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:'Rajdhani',fontSize:22,fontWeight:700}}>
+                {user.displayName || 'User'}
+              </div>
+              <div style={{fontSize:13,color:'var(--text3)'}}>{user.email}</div>
+              <div style={{marginTop:8,display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontFamily:'Rajdhani',fontSize:20,fontWeight:700,color:'var(--neon1)'}}>{balance.toFixed(2)} ₼</span>
+                <span style={{fontSize:11,color:'var(--text3)'}}>balans</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Balans kartı */}
+        <div style={{background:'var(--grad1)',borderRadius:14,padding:'16px 20px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}
+          onClick={() => setShowDeposit(true)}>
+          <div>
+            <div style={{fontSize:12,opacity:0.8,marginBottom:4}}>Cüzdan balansı</div>
+            <div style={{fontFamily:'Rajdhani',fontSize:30,fontWeight:700}}>{profileBalance.toFixed(2)} ₼</div>
+            <div style={{fontSize:11,opacity:0.7,marginTop:2}}>Yükləmək üçün toxunun →</div>
+          </div>
+          <span style={{fontSize:38,opacity:0.85}}>💎</span>
+        </div>
+
+        {/* Stats */}
+        <div className="stats-row">
+          <div className="stat-box">
+            <div className="stat-val">{listings.length}</div>
+            <div className="stat-label">{t.listingsCount}</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-val">{favCount}</div>
+            <div className="stat-label">{t.favCount}</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-val">★</div>
+            <div className="stat-label">Rating</div>
+          </div>
+        </div>
+
+        {/* My Listings */}
+        <h3 className="section-title">{t.myListings}</h3>
+
+        {loading ? (
+          <div style={{display:'flex',justifyContent:'center',padding:32}}>
+            <div className="spinner spinner-lg"/>
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">📭</div>
+            <div className="empty-title">{t.noListings}</div>
+          </div>
+        ) : (
+          listings.map(l => (
+            <div key={l.id} className="card" style={{padding:14,marginBottom:10,display:'flex',gap:12,alignItems:'center'}}>
+              <div style={{width:50,height:50,borderRadius:8,background:'var(--bg3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0,overflow:'hidden'}}>
+                {l.images && l.images[0]
+                  ? <img src={l.images[0]} alt={l.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  : CATEGORY_ICONS[l.category] || '🎮'
+                }
+              </div>
+              <div style={{flex:1,overflow:'hidden'}}>
+                <div style={{fontWeight:600,fontSize:14}} className="truncate">{l.title}</div>
+                <div style={{fontSize:12,color:'var(--neon1)',fontFamily:'Rajdhani',fontWeight:700}}>{l.price} ₼</div>
+              </div>
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={() => handleDelete(l.id)}
+                disabled={deleting === l.id}
+              >
+                {deleting === l.id ? <div className="spinner" style={{width:14,height:14}}/> : <Icons.trash/>}
+              </button>
+            </div>
+          ))
+        )}
+
+        <div className="divider"/>
+        <button className="btn btn-outline w-full" onClick={onLogout} style={{color:'var(--danger)',borderColor:'rgba(239,68,68,0.3)'}}>
+          {t.logout}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// BALANCE DISPLAY
+// ============================================================
+function BalanceDisplay({ uid, style }) {
+  const [balance, setBalance] = React.useState(0);
+  React.useEffect(() => {
+    if (!uid || !db) return;
+    const unsub = db.collection('users').doc(uid).onSnapshot(doc => {
+      if (doc.exists) setBalance(doc.data().balance || 0);
+    });
+    return unsub;
+  }, [uid]);
+  return <span style={style}>{balance.toFixed(2)} ₼</span>;
+}
+
+// ============================================================
+// LANGUAGE SWITCHER
+// ============================================================
+
+
+// ============================================================
+// DEPOSIT MODAL — Balans artırma
+// ============================================================
+function DepositModal({ user, onClose, showToast }) {
+  const [amount, setAmount] = React.useState('');
+  const [promoCode, setPromoCode] = React.useState('');
+  const [promoInfo, setPromoInfo] = React.useState(null); // {discount, isFree, code}
+  const [checkImg, setCheckImg] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+  const [step, setStep] = React.useState('form'); // form | done
+  const [reqId, setReqId] = React.useState('');
+  const fileRef = React.useRef(null);
+
+  const presets = [1, 2, 5, 10];
+
+  const finalAmount = React.useMemo(() => {
+    const base = parseFloat(amount) || 0;
+    if (!promoInfo || base === 0) return base;
+    if (promoInfo.isFree) return 0;
+    return Math.max(0, +(base * (1 - promoInfo.discount / 100)).toFixed(2));
+  }, [amount, promoInfo]);
+
+  const checkPromo = async () => {
+    if (!promoCode.trim()) return;
+    try {
+      const doc = await db.collection('promoCodes').doc(promoCode.trim().toUpperCase()).get();
+      if (!doc.exists) { showToast('Promo kod tapılmadı', 'error'); return; }
+      const d = doc.data();
+      if (d.status !== 'active') { showToast('Bu kod artıq istifadə edilib və ya deaktivdir', 'error'); return; }
+      if (d.usedCount >= (d.maxUse || 999999)) { showToast('Kodun istifadə limiti dolub', 'error'); return; }
+      setPromoInfo({ discount: d.discount || 0, isFree: d.isFree || false, code: promoCode.trim().toUpperCase(), docData: d });
+      if (d.isFree) showToast('🎉 Tam pulsuz! Ödəniş tələb olunmur.', 'success');
+      else showToast(`✅ ${d.discount}% endirim tətbiq edildi!`, 'success');
+    } catch(e) { showToast('Xəta: ' + e.message, 'error'); }
+  };
+
+  const handleImg = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setCheckImg(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async () => {
+    const base = parseFloat(amount);
+    if (!base || base < 1) { showToast('Minimum 1 ₼ daxil edin', 'error'); return; }
+    if (!promoInfo?.isFree && !(promoInfo?.docData?.amount > 0) && !checkImg) { showToast('Ödəniş çekini yükləyin', 'error'); return; }
+    setLoading(true);
+    try {
+      const id = 'DEP' + Date.now().toString(36).toUpperCase();
+      setReqId(id);
+
+      await db.collection('depositRequests').doc(id).set({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || '',
+        reqId: id,
+        baseAmount: base,
+        finalAmount,
+        promoCode: promoInfo?.code || null,
+        promoDiscount: promoInfo?.discount || 0,
+        isFree: promoInfo?.isFree || false,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Promo kod istifadə sayını artır
+      if (promoInfo?.code) {
+        await db.collection('promoCodes').doc(promoInfo.code).update({
+          usedCount: firebase.firestore.FieldValue.increment(1)
+        });
+      }
+
+      // Telegram bildirişi
+      const caption =
+        `💰 <b>Balans Sorğusu — AccStore</b>\n\n` +
+        `👤 <b>${user.displayName || 'İstifadəçi'}</b>\n` +
+        `📧 ${user.email}\n` +
+        `🆔 Sorğu: <code>${id}</code>\n` +
+        `💵 Məbləğ: ${base} ₼` +
+        (promoInfo ? `\n🎟 Promo: <b>${promoInfo.code}</b> (${promoInfo.isFree ? 'TAM PULSUZ' : promoInfo.discount + '% endirim'})\n✅ Ödənilməli: ${finalAmount} ₼` : '') +
+        `\n\n📋 Firestore-da bu sorğunu <b>approved</b> edin → balans avtomatik artacaq.`;
+
+      if (promoInfo?.isFree || promoInfo?.docData?.amount > 0) {
+        await tgNotify(caption);
+        // Tam pulsuz və ya amount varsa dərhal approve et
+        await db.collection('depositRequests').doc(id).update({ status: 'approved' });
+        const creditAmount = promoInfo?.docData?.amount > 0 ? promoInfo.docData.amount : base;
+        await db.collection('users').doc(user.uid).set(
+          { balance: firebase.firestore.FieldValue.increment(creditAmount) }, { merge: true }
+        );
+        await db.collection('transactions').add({
+          uid: user.uid, type: 'promo_topup', amount: creditAmount,
+          description: `Promokod: ${promoInfo.code}`,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        showToast(`🎉 ${creditAmount} ₼ balansınıza əlavə edildi!`, 'success');
+      } else {
+        await tgSendPhoto(checkImg, caption);
+        showToast('Sorğu göndərildi! Admin yoxlayıb balansı artıracaq.', 'success');
+      }
+
+      setStep('done');
+    } catch(e) { showToast('Xəta: ' + e.message, 'error'); }
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <div style={{fontFamily:'Rajdhani',fontSize:20,fontWeight:700}}>💰 Balans Artır</div>
+          <button className="btn btn-ghost btn-icon" onClick={onClose}><Icons.close/></button>
+        </div>
+        <div className="modal-body">
+
+          {step === 'form' && (<>
+            {/* Kart məlumatları */}
+            {!promoInfo?.isFree && (
+              <div style={{background:'var(--bg3)',borderRadius:12,padding:14,marginBottom:16}}>
+                <div style={{fontSize:12,color:'var(--text3)',marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:1}}>Ödəniş məlumatları</div>
+                {[[`Kart`, SITE_CARD_NUMBER],[`Sahibi`, SITE_CARD_NAME]].map(([k,v],i)=>(
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:i===0?8:0,paddingBottom:i===0?8:0,borderBottom:i===0?'1px solid var(--border)':'none'}}>
+                    <span style={{color:'var(--text3)'}}>{k}</span>
+                    <span style={{fontWeight:700,letterSpacing:i===0?1:0}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Məbləğ — promo amount varsa gizlə */}
+            {!(promoInfo?.docData?.amount > 0) && !(promoInfo?.isFree) && (
+            <div className="form-group">
+              <label className="label">Məbləğ (₼)</label>
+              <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap'}}>
+                {presets.map(p => (
+                  <button key={p} onClick={() => setAmount(String(p))}
+                    style={{padding:'5px 14px',border:`1px solid ${amount==p?'var(--neon1)':'var(--border)'}`,borderRadius:8,background: amount==p?'rgba(124,58,237,0.15)':'var(--bg3)',color: amount==p?'var(--neon1)':'var(--text2)',cursor:'pointer',fontSize:13,fontWeight:600}}>
+                    {p} ₼
+                  </button>
+                ))}
+              </div>
+              <input className="input" type="number" min="1" placeholder="Məbləğ daxil edin" value={amount} onChange={e=>setAmount(e.target.value)}/>
+            </div>
+            )}
+
+            {/* Promo kod */}
+            <div className="form-group">
+              <label className="label">Promo Kod (istəyə bağlı)</label>
+              <div style={{display:'flex',gap:8}}>
+                <input className="input" placeholder="PROMO123" value={promoCode} onChange={e=>setPromoCode(e.target.value.toUpperCase())} style={{flex:1}}/>
+                <button className="btn btn-outline" onClick={checkPromo} style={{flexShrink:0,padding:'0 14px'}}>Tətbiq et</button>
+              </div>
+              {promoInfo && (
+                <div style={{marginTop:8,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid rgba(16,185,129,0.3)',borderRadius:8,fontSize:13,color:'var(--success)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  {promoInfo.docData?.amount > 0
+                    ? <span>🎁 <b>{promoInfo.docData.amount} ₼</b> balansınıza əlavə olunacaq</span>
+                    : promoInfo.isFree
+                      ? <span>🎉 Tam pulsuz!</span>
+                      : <span>✅ {promoInfo.discount}% endirim</span>
+                  }
+                  {promoInfo.docData?.amount === 0 && parseFloat(amount) > 0 && <span style={{fontWeight:700}}>{finalAmount} ₼ ödənilir</span>}
+                </div>
+              )}
+            </div>
+
+            {/* Çek yüklə */}
+            {!promoInfo?.isFree && !(promoInfo?.docData?.amount > 0) && (
+              <div className="form-group">
+                <label className="label">Ödəniş çeki (şəkil)</label>
+                <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleImg}/>
+                {checkImg ? (
+                  <div style={{position:'relative',borderRadius:10,overflow:'hidden',border:'1px solid var(--border)'}}>
+                    <img src={checkImg} alt="çek" style={{width:'100%',maxHeight:200,objectFit:'contain',background:'#000'}}/>
+                    <button onClick={()=>setCheckImg(null)} style={{position:'absolute',top:8,right:8,background:'var(--danger)',border:'none',borderRadius:'50%',width:24,height:24,color:'white',cursor:'pointer',fontSize:14}}>×</button>
+                  </div>
+                ) : (
+                  <div onClick={()=>fileRef.current.click()} style={{border:'2px dashed var(--border2)',borderRadius:10,padding:'20px',textAlign:'center',cursor:'pointer',background:'var(--bg3)',fontSize:13,color:'var(--text3)'}}>
+                    📷 Çek şəklini yükləyin
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button className="btn btn-primary w-full" style={{padding:'11px',fontSize:14}} onClick={async () => {
+              if (promoInfo?.docData?.amount > 0) {
+                const fixedAmt = promoInfo.docData.amount;
+                const base = fixedAmt;
+                if (!promoInfo?.isFree && !(promoInfo?.docData?.amount > 0) && !checkImg) { showToast('Ödəniş çekini yükləyin', 'error'); return; }
+                setLoading(true);
+                try {
+                  const id = 'DEP' + Date.now().toString(36).toUpperCase();
+                  setReqId(id);
+                  await db.collection('depositRequests').doc(id).set({
+                    uid: user.uid, email: user.email, displayName: user.displayName || '',
+                    reqId: id, baseAmount: fixedAmt, finalAmount: fixedAmt,
+                    promoCode: promoInfo.code, isFree: true, status: 'approved',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  });
+                  if (promoInfo.code) {
+                    await db.collection('promoCodes').doc(promoInfo.code).update({
+                      usedCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                  }
+                  await db.collection('users').doc(user.uid).set(
+                    { balance: firebase.firestore.FieldValue.increment(fixedAmt) }, { merge: true }
+                  );
+                  await db.collection('transactions').add({
+                    uid: user.uid, type: 'promo_topup', amount: fixedAmt,
+                    description: `Promokod: ${promoInfo.code}`,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  });
+                  await tgNotify(`🎁 Promokod istifadəsi\n👤 ${user.displayName||user.email}\n🔑 Kod: ${promoInfo.code}\n💰 +${fixedAmt} ₼`);
+                  showToast(`🎁 ${fixedAmt} ₼ balansınıza əlavə edildi!`, 'success');
+                  setStep('done');
+                } catch(e) { showToast('Xəta: ' + e.message, 'error'); }
+                setLoading(false);
+              } else {
+                handleSubmit();
+              }
+            }} disabled={loading}>
+              {loading ? <div className="spinner"/> : promoInfo?.docData?.amount > 0 ? `🎁 ${promoInfo.docData.amount} ₼ Al` : promoInfo?.isFree ? '🎉 Pulsuz Aktivləşdir' : '📤 Sorğu Göndər'}
+            </button>
+          </>)}
+
+          {step === 'done' && (
+            <div style={{textAlign:'center',padding:'20px 0'}}>
+              {promoInfo?.isFree ? (
+                <>
+                  <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+                  <div style={{fontWeight:700,fontSize:16,marginBottom:8}}>Balans artırıldı!</div>
+                  <div style={{fontSize:13,color:'var(--text3)',marginBottom:20}}>{parseFloat(amount)} ₼ hesabınıza əlavə edildi.</div>
+                </>
+              ) : (
+                <>
+                  <div style={{fontSize:48,marginBottom:12}}>✅</div>
+                  <div style={{fontWeight:700,fontSize:16,marginBottom:8}}>Sorğu göndərildi!</div>
+                  <div style={{fontSize:13,color:'var(--text3)',marginBottom:8,lineHeight:1.6}}>
+                    Admin ödənişi yoxlayıb balansınızı artıracaq.<br/>Adətən 5-30 dəqiqə çəkir.
+                  </div>
+                  <div style={{background:'var(--bg3)',borderRadius:8,padding:'8px 12px',fontSize:12,color:'var(--text3)',marginBottom:20}}>
+                    Sorğu ID: <span style={{fontWeight:700,color:'var(--text1)'}}>{reqId}</span>
+                  </div>
+                </>
+              )}
+              <button className="btn btn-primary w-full" onClick={onClose}>Bağla</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// VIP MODAL — Telegram Manual Təsdiq
+// ============================================================
+function VipModal({ user, onClose, showToast }) {
+  const [step, setStep] = React.useState('info'); // info | payment | code
+  const [credits, setCredits] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
+  const [code, setCode] = React.useState('');
+
+  // Krediti real vaxtda izlə
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) return;
+    const unsub = db.collection('users').doc(user.uid).onSnapshot(doc => {
+      if (doc.exists) setCredits(doc.data().vipCredits || 0);
+    });
+    return unsub;
+  }, []);
+
+  const handleBuyVip = async () => {
+    setLoading(true);
+    try {
+      // Balansı yoxla
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      const balance = userDoc.exists ? (userDoc.data().balance || 0) : 0;
+      if (balance < VIP_PRICE_AZN) {
+        showToast(`Balansınız kifayət deyil. Lazım: ${VIP_PRICE_AZN} ₼, Balans: ${balance.toFixed(2)} ₼`, 'error');
+        setLoading(false); return;
+      }
+      // Balansdan düş + VIP krediti artır
+      await db.collection('users').doc(user.uid).set({
+        balance: firebase.firestore.FieldValue.increment(-VIP_PRICE_AZN),
+        vipCredits: firebase.firestore.FieldValue.increment(1),
+      }, { merge: true });
+
+      // Əməliyyat tarixçəsi
+      await db.collection('transactions').add({
+        uid: user.uid,
+        type: 'vip_purchase',
+        amount: -VIP_PRICE_AZN,
+        description: 'VIP elan alışı',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      showToast('⭐ VIP kredit əlavə edildi!', 'success');
+      onClose();
+    } catch(e) { showToast('Xəta: ' + e.message, 'error'); }
+    setLoading(false);
+  };
+
+  // Köhnə handlePaymentDone saxlanır amma artıq işlətmirik
+  const handlePaymentDone = handleBuyVip;
+
+  const handleCodeCheck = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) { showToast('Kodu daxil edin', 'error'); return; }
+    setLoading(true);
+    try {
+      const doc = await db.collection('vipRequests').doc(trimmed).get();
+      if (!doc.exists) { showToast('Sorğu tapılmadı', 'error'); setLoading(false); return; }
+      const data = doc.data();
+      if (data.uid !== user.uid) { showToast('Bu sorğu sizə aid deyil', 'error'); setLoading(false); return; }
+      if (data.status === 'used') { showToast('Bu sorğu artıq istifadə edilib', 'error'); setLoading(false); return; }
+      if (data.status !== 'approved') {
+        showToast('Hələ təsdiqlənməyib. Admin tezliklə yoxlayacaq.', 'info');
+        setLoading(false); return;
+      }
+      // Krediti artır
+      await db.collection('users').doc(user.uid).set(
+        { vipCredits: firebase.firestore.FieldValue.increment(1) }, { merge: true }
+      );
+      await db.collection('vipRequests').doc(trimmed).update({ status: 'used' });
+      showToast('⭐ VIP kredit əlavə edildi!', 'success');
+      setStep('info');
+      setCode('');
+    } catch(e) { showToast('Xəta: ' + e.message, 'error'); }
+    setLoading(false);
+  };
+
+  const goldGrad = 'linear-gradient(135deg,#f59e0b,#ef4444)';
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <div style={{fontFamily:'Rajdhani',fontSize:20,fontWeight:700,color:'#f59e0b'}}>⭐ VIP Sistem</div>
+          <button className="btn btn-ghost btn-icon" onClick={onClose}><Icons.close/></button>
+        </div>
+        <div className="modal-body">
+
+          {/* Balans + Kredit */}
+          <div style={{display:'flex',gap:8,marginBottom:16}}>
+            <div style={{flex:1,background:'linear-gradient(135deg,rgba(124,58,237,0.1),rgba(6,182,212,0.1))',border:'1px solid rgba(124,58,237,0.3)',borderRadius:10,padding:'10px 14px'}}>
+              <div style={{fontSize:11,color:'var(--text3)',marginBottom:2}}>Balans</div>
+              <BalanceDisplay uid={user.uid} style={{fontFamily:'Rajdhani',fontSize:20,fontWeight:700,color:'var(--neon1)'}}/>
+            </div>
+            <div style={{flex:1,background:'linear-gradient(135deg,rgba(245,158,11,0.1),rgba(239,68,68,0.1))',border:'1px solid rgba(245,158,11,0.3)',borderRadius:10,padding:'10px 14px'}}>
+              <div style={{fontSize:11,color:'var(--text3)',marginBottom:2}}>VIP elan qiyməti</div>
+              <div style={{fontFamily:'Rajdhani',fontSize:20,fontWeight:700,color:'#f59e0b'}}>{VIP_PRICE_AZN} ₼</div>
+            </div>
+          </div>
+
+
+
+          {/* VIP üstünlükləri */}
+          {['Ana səhifənin ən yuxarısında görünür','Qızılı haşiyə ilə fərqlənir','Daha çox baxış və alıcı cəlb edir'].map((item,i) => (
+            <div key={i} style={{display:'flex',gap:10,marginBottom:10,fontSize:13,color:'var(--text2)',alignItems:'center'}}>
+              <span style={{color:'#f59e0b',fontSize:16,flexShrink:0}}>✓</span> {item}
+            </div>
+          ))}
+
+          <div style={{background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'var(--text2)',margin:'14px 0',lineHeight:1.6}}>
+            💡 VIP elan almaq üçün əvvəlcə <b>Balans Artır</b> bölməsindən hesabınıza pul əlavə edin. Sonra balansınızdan VIP satın alın.
+          </div>
+
+          <button
+            className="btn btn-primary w-full"
+            style={{background: goldGrad, border:'none', padding:'12px', fontSize:14}}
+            onClick={handleBuyVip}
+            disabled={loading}
+          >
+            {loading ? <div className="spinner"/> : `⭐ ${VIP_PRICE_AZN} ₼ ilə VIP Al`}
+          </button>
+
+        </div>
+      </div>
+    </div>
+  );
+
+}
+function LangSwitcher({ lang, setLang, t }) {
+  const [open, setOpen] = React.useState(false);
+  const options = [
+    { code: 'az', flag: '🇦🇿', label: 'AZ' },
+    { code: 'en', flag: '🇬🇧', label: 'EN' },
+    { code: 'ru', flag: '🇷🇺', label: 'RU' },
+  ];
+  const current = options.find(o => o.code === lang);
+  return (
+    <div className="relative">
+      <button className="lang-btn" onClick={() => setOpen(p => !p)} style={{fontSize:20,padding:'4px 6px',background:'none',border:'none',cursor:'pointer',lineHeight:1}}>
+        {current?.flag}
+      </button>
+      {open && (
+        <div className="lang-dropdown">
+          {options.map(o => (
+            <div
+              key={o.code}
+              className={`lang-option ${lang === o.code ? 'active' : ''}`}
+              onClick={() => { setLang(o.code); setOpen(false); }}
+              style={{display:'flex',alignItems:'center',gap:8}}
+            >
+              <span style={{fontSize:18}}>{o.flag}</span>
+              <span style={{fontSize:13}}>{o.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// MAIN APP
+// ============================================================
+function App() {
+  const [firebaseInit, setFirebaseInit] = React.useState(false);
+  const [lang, setLang] = React.useState('az');
+  const [page, setPage] = React.useState('home');
+  const [user, setUser] = React.useState(null);
+  const [authLoading, setAuthLoading] = React.useState(true);
+  const [showAuth, setShowAuth] = React.useState(false);
+  const [showProfileMenu, setShowProfileMenu] = React.useState(false);
+  const [showVip, setShowVip] = React.useState(false);
+  const [showDeposit, setShowDeposit] = React.useState(false);
+  const [selectedListing, setSelectedListing] = React.useState(null);
+  const [chatListing, setChatListing] = React.useState(null);
+  const [favorites, setFavorites] = React.useState([]);
+  const { toast, show: showToast } = useToast();
+
+  const t = TRANSLATIONS[lang];
+
+  // Auto-initialize Firebase with hardcoded config
+  React.useEffect(() => {
+    const ok = initFirebase(FIREBASE_CONFIG);
+    if (ok) setFirebaseInit(true);
+  }, []);
+
+  // Auth listener
+  React.useEffect(() => {
+    if (!firebaseInit) { setAuthLoading(false); return; }
+    const unsub = auth.onAuthStateChanged(u => {
+      if (u) {
+        setUser({
+          uid: u.uid,
+          email: u.email || '',
+          displayName: u.displayName || '',
+          photoURL: u.photoURL || '',
+          isGuest: false,
+        });
+      } else {
+        setUser(null);
+      }
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, [firebaseInit]);
+
+  // Load favorites
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) { setFavorites([]); return; }
+    const q = db.collection('favorites').doc(user.uid).collection('items');
+    const unsub = q.onSnapshot(snap => {
+      setFavorites(snap.docs.map(d => d.id));
+    });
+    return unsub;
+  }, [user]);
+
+  const toggleFav = async (listingId) => {
+    if (!user || user.isGuest) { showToast(t.loginToFav, 'info'); return; }
+    const ref = db.collection('favorites').doc(user.uid).collection('items').doc(listingId);
+    if (favorites.includes(listingId)) {
+      await ref.delete();
+      showToast('Seçilmişlərdən silindi', 'info');
+    } else {
+      await ref.set({ savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      showToast(t.saved, 'success');
+    }
+  };
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    setUser(null);
+    setPage('home');
+    showToast('Çıxış edildi', 'info');
+  };
+
+  const handleAuthClose = (asGuest) => {
+    setShowAuth(false);
+    if (asGuest) setUser({ isGuest: true, email: 'guest', uid: 'guest', displayName: 'Guest' });
+  };
+
+  const handleListingClick = (listing) => {
+    setSelectedListing(listing);
+  };
+
+  const handleOpenChat = (listing) => {
+    setChatListing(listing);
+    setSelectedListing(null);
+    setPage('chat');
+  };
+
+  if (!firebaseInit) {
+    return <SetupScreen onDone={() => setFirebaseInit(true)} t={t}/>;
+  }
+
+  if (authLoading) {
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16}}>
+        <div className="logo" style={{fontSize:36}}>Acc<span>Store</span></div>
+        <div className="spinner spinner-lg"/>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,position:'relative',zIndex:1}}>
+          <div className="logo" style={{fontSize:48,marginBottom:8}}>Acc<span>Store</span></div>
+          <p style={{color:'var(--text2)',fontSize:15,marginBottom:40}}>{t.tagline}</p>
+
+          <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:320}}>
+            <button className="btn btn-primary" style={{padding:'14px 24px',fontSize:16}} onClick={() => setShowAuth(true)}>
+              🔓 Daxil ol / Qeydiyyat
+            </button>
+            <button className="btn btn-outline" style={{padding:'14px 24px',fontSize:15}} onClick={() => { setUser({isGuest:true,email:'guest',uid:'guest',displayName:'Guest'}); }}>
+              👀 {t.loginGuest}
+            </button>
+          </div>
+
+          <div style={{position:'absolute',top:20,right:20}}>
+            <LangSwitcher lang={lang} setLang={setLang} t={t}/>
+          </div>
+        </div>
+        {showAuth && <AuthModal onClose={handleAuthClose} t={t}/>}
+        <Toast toast={toast}/>
+      </>
+    );
+  }
+
+  // Listing detail
+  if (selectedListing) {
+    return (
+      <>
+        <div className="topbar">
+          <div className="logo">Acc<span>Store</span></div>
+          <LangSwitcher lang={lang} setLang={setLang} t={t}/>
+        </div>
+        <ListingDetailPage
+          listing={selectedListing}
+          onBack={() => setSelectedListing(null)}
+          user={user}
+          onFav={toggleFav}
+          isFav={favorites.includes(selectedListing.id)}
+          t={t}
+          showToast={showToast}
+          onOpenChat={handleOpenChat}
+        />
+        <Toast toast={toast}/>
+      </>
+    );
+  }
+
+  const navItems = [
+    { id: 'home', icon: Icons.home, label: t.home },
+    { id: 'chat', icon: Icons.chat, label: t.chat },
+    { id: 'create', icon: Icons.plus, label: t.create },
+    { id: 'favorites', icon: () => <Icons.heart filled={false}/>, label: t.favorites },
+    { id: 'profile', icon: Icons.profile, label: t.profile },
+  ];
+
+  return (
+    <>
+      {/* Topbar */}
+      <div className="topbar">
+        <div className="logo">Acc<span>Store</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          {user.isGuest && (
+            <span style={{fontSize:11,color:'var(--warning)',background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.2)',padding:'3px 8px',borderRadius:50}}>
+              👁 Guest
+            </span>
+          )}
+          <LangSwitcher lang={lang} setLang={setLang} t={t}/>
+          {!user.isGuest ? (
+            <div style={{position:'relative'}}>
+              <div
+                style={{width:32,height:32,borderRadius:'50%',overflow:'hidden',border:'2px solid var(--neon1)',cursor:'pointer'}}
+                onClick={() => setShowProfileMenu(p => !p)}
+              >
+                {user.photoURL
+                  ? <img src={user.photoURL} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  : <div style={{width:'100%',height:'100%',background:'var(--grad1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'white'}}>
+                      {(user.displayName||user.email||'U')[0].toUpperCase()}
+                    </div>
+                }
+              </div>
+              {showProfileMenu && (
+                <>
+                  <div style={{position:'fixed',inset:0,zIndex:199}} onClick={() => setShowProfileMenu(false)}/>
+                  <div style={{
+                    position:'absolute',top:40,right:0,zIndex:200,
+                    background:'var(--bg2)',border:'1px solid var(--border)',
+                    borderRadius:12,padding:8,minWidth:200,
+                    boxShadow:'0 8px 32px rgba(0,0,0,0.4)'
+                  }}>
+                    {/* User info */}
+                    <div style={{padding:'10px 12px 12px',borderBottom:'1px solid var(--border)',marginBottom:6}}>
+                      <div style={{fontWeight:700,fontSize:14,marginBottom:2}}>{user.displayName || 'İstifadəçi'}</div>
+                      <div style={{fontSize:12,color:'var(--text3)'}}>{user.email}</div>
+                    </div>
+                    {/* Profile */}
+                    <button
+                      style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'none',border:'none',borderRadius:8,cursor:'pointer',color:'var(--text1)',fontSize:13,textAlign:'left'}}
+                      onMouseEnter={e => e.currentTarget.style.background='var(--bg3)'}
+                      onMouseLeave={e => e.currentTarget.style.background='none'}
+                      onClick={() => { setShowProfileMenu(false); setPage('profile'); }}
+                    >
+                      <span style={{fontSize:16}}>👤</span> {t.profile}
+                    </button>
+                    {/* My listings */}
+                    <button
+                      style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'none',border:'none',borderRadius:8,cursor:'pointer',color:'var(--text1)',fontSize:13,textAlign:'left'}}
+                      onMouseEnter={e => e.currentTarget.style.background='var(--bg3)'}
+                      onMouseLeave={e => e.currentTarget.style.background='none'}
+                      onClick={() => { setShowProfileMenu(false); setPage('profile'); }}
+                    >
+                      <span style={{fontSize:16}}>📋</span> Elanlarım
+                    </button>
+                    {/* Wallet */}
+                    <button
+                      style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'none',border:'none',borderRadius:8,cursor:'pointer',color:'var(--text1)',fontSize:13,textAlign:'left'}}
+                      onMouseEnter={e => e.currentTarget.style.background='var(--bg3)'}
+                      onMouseLeave={e => e.currentTarget.style.background='none'}
+                      onClick={() => { setShowProfileMenu(false); setShowDeposit(true); }}
+                    >
+                      <span style={{fontSize:16}}>💰</span> Cüzdan
+                    </button>
+                    {/* Balance + Deposit */}
+                    <div style={{padding:'8px 12px',marginBottom:4}}>
+                      <div style={{fontSize:11,color:'var(--text3)',marginBottom:2}}>Balansınız</div>
+                      <BalanceDisplay uid={user.uid} style={{fontFamily:'Rajdhani',fontSize:18,fontWeight:700,color:'var(--neon1)'}}/>
+                    </div>
+                    <button
+                      style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'none',border:'none',borderRadius:8,cursor:'pointer',color:'var(--neon1)',fontSize:13,textAlign:'left'}}
+                      onMouseEnter={e => e.currentTarget.style.background='rgba(124,58,237,0.08)'}
+                      onMouseLeave={e => e.currentTarget.style.background='none'}
+                      onClick={() => { setShowProfileMenu(false); setShowDeposit(true); }}
+                    >
+                      <span style={{fontSize:16}}>💰</span> Balans Artır
+                    </button>
+                    {/* VIP */}
+                    <button
+                      style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'none',border:'none',borderRadius:8,cursor:'pointer',color:'#f59e0b',fontSize:13,textAlign:'left'}}
+                      onMouseEnter={e => e.currentTarget.style.background='rgba(245,158,11,0.08)'}
+                      onMouseLeave={e => e.currentTarget.style.background='none'}
+                      onClick={() => { setShowProfileMenu(false); setShowVip(true); }}
+                    >
+                      <span style={{fontSize:16}}>⭐</span> VIP Al
+                    </button>
+                    {/* Logout */}
+                    <div style={{borderTop:'1px solid var(--border)',marginTop:6,paddingTop:6}}>
+                      <button
+                        style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'none',border:'none',borderRadius:8,cursor:'pointer',color:'var(--danger)',fontSize:13,textAlign:'left'}}
+                        onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.background='none'}
+                        onClick={() => { setShowProfileMenu(false); handleLogout(); }}
+                      >
+                        <span style={{fontSize:16}}>🚪</span> {t.logout}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <button className="btn btn-primary btn-sm" onClick={() => setShowAuth(true)}>
+              {t.login}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Guest banner */}
+      {user.isGuest && page === 'home' && (
+        <div style={{
+          position:'fixed', top:60, left:0, right:0, zIndex:99,
+          background:'rgba(245,158,11,0.1)', borderBottom:'1px solid rgba(245,158,11,0.2)',
+          padding:'8px 16px', fontSize:12, color:'var(--warning)', textAlign:'center'
+        }}>
+          {t.guestWarning}
+        </div>
+      )}
+
+      {/* Pages */}
+      {page === 'home' && (
+        <HomePage t={t} user={user} onListingClick={handleListingClick} onFav={toggleFav} favorites={favorites}/>
+      )}
+      {page === 'chat' && (
+        <ChatPage t={t} user={user} showToast={showToast} initialListing={chatListing}/>
+      )}
+      {page === 'create' && (
+        <CreateListingPage t={t} user={user} showToast={showToast} onDone={() => setPage('home')}/>
+      )}
+      {page === 'favorites' && (
+        <FavoritesPage t={t} user={user} favorites={favorites} onListingClick={handleListingClick} onFav={toggleFav}/>
+      )}
+      {page === 'profile' && (
+        <ProfilePage t={t} user={user} onLogout={handleLogout} showToast={showToast} setShowDeposit={setShowDeposit}/>
+      )}
+
+      {/* Bottom Nav */}
+      <nav className="nav">
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            className={`nav-item ${page === item.id ? 'active' : ''} ${item.id === 'create' ? 'nav-create' : ''}`}
+            onClick={() => {
+              if (item.id === 'create' && (user.isGuest)) {
+                setShowAuth(true);
+              } else {
+                setPage(item.id);
+                if (item.id !== 'chat') setChatListing(null);
+              }
+            }}
+          >
+            <item.icon/>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {showAuth && <AuthModal onClose={handleAuthClose} t={t}/>}
+      {showVip && <VipModal user={user} onClose={() => setShowVip(false)} showToast={showToast}/>}
+      {showDeposit && <DepositModal user={user} onClose={() => setShowDeposit(false)} showToast={showToast}/>}
+      <Toast toast={toast}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
