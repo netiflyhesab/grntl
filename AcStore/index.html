@@ -2873,6 +2873,26 @@ function ProfilePage({ t, user, onLogout, showToast, setShowDeposit }) {
 }
 
 // ============================================================
+// STAR RATING
+// ============================================================
+function StarRating({ value, onChange, size = 22, readonly = false }) {
+  const [hover, setHover] = React.useState(0);
+  return (
+    <div style={{display:'flex',gap:2}}>
+      {[1,2,3,4,5].map(star => (
+        <span
+          key={star}
+          style={{fontSize:size,cursor:readonly?'default':'pointer',color:(hover||value)>=star?'#f59e0b':'var(--text3)',transition:'color 0.15s',lineHeight:1}}
+          onClick={() => !readonly && onChange && onChange(star)}
+          onMouseEnter={() => !readonly && setHover(star)}
+          onMouseLeave={() => !readonly && setHover(0)}
+        >★</span>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
 // BALANCE DISPLAY
 // ============================================================
 function BalanceDisplay({ uid, style }) {
