@@ -1868,8 +1868,8 @@ function ListingDetailPage({ listing, onBack, user, onFav, isFav, t, showToast, 
   return (
     <div className="page">
       <div className="container">
-        <button className="btn btn-ghost" style={{marginBottom:12}} onClick={onBack}>
-          <Icons.back/> Geri
+        <button className="btn btn-outline" style={{marginBottom:12,padding:'8px 20px',fontSize:14,display:'flex',alignItems:'center',gap:6,fontWeight:600}} onClick={onBack}>
+          ← Geri
         </button>
 
         {/* Main Image */}
@@ -2109,8 +2109,8 @@ function EditListingPage({ listing, onBack, t, showToast, user }) {
   return (
     <div className="page">
       <div className="container">
-        <button className="btn btn-ghost" style={{marginBottom:12}} onClick={onBack}>
-          <Icons.back/> {t.cancel}
+        <button className="btn btn-outline" style={{marginBottom:12,padding:'8px 20px',fontSize:14,display:'flex',alignItems:'center',gap:6,fontWeight:600}} onClick={onBack}>
+          ← {t.cancel}
         </button>
         <h2 className="section-title">{t.editListing}</h2>
 
@@ -2709,6 +2709,7 @@ function ProfilePage({ t, user, onLogout, showToast, setShowDeposit }) {
   const [loading, setLoading] = React.useState(true);
   const [deleting, setDeleting] = React.useState(null);
   const [favCount, setFavCount] = React.useState(0);
+  const [avgRating, setAvgRating] = React.useState(0);
 
   React.useEffect(() => {
     if (!user || user.isGuest || !db) { setLoading(false); return; }
@@ -2718,6 +2719,14 @@ function ProfilePage({ t, user, onLogout, showToast, setShowDeposit }) {
       data.sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
       setListings(data);
       setLoading(false);
+      // Ortalama reytinqi hesabla
+      const rated = data.filter(l => l.avgRating > 0);
+      if (rated.length > 0) {
+        const avg = rated.reduce((sum, l) => sum + (l.avgRating || 0), 0) / rated.length;
+        setAvgRating(avg);
+      } else {
+        setAvgRating(0);
+      }
     }, (e) => { console.error(e); setLoading(false); });
 
     // Count favorites
@@ -2822,8 +2831,10 @@ function ProfilePage({ t, user, onLogout, showToast, setShowDeposit }) {
             <div className="stat-label">{t.favCount}</div>
           </div>
           <div className="stat-box">
-            <div className="stat-val">★</div>
-            <div className="stat-label">Rating</div>
+            <div className="stat-val" style={{color:'#f59e0b'}}>
+              {avgRating > 0 ? `★ ${avgRating.toFixed(1)}` : '—'}
+            </div>
+            <div className="stat-label">Ortalama Reytinq</div>
           </div>
         </div>
 
@@ -3566,15 +3577,6 @@ function App() {
                       onClick={() => { setShowProfileMenu(false); setShowDeposit(true); }}
                     >
                       <span style={{fontSize:16}}>💰</span> Balans Artır
-                    </button>
-                    {/* VIP */}
-                    <button
-                      style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'none',border:'none',borderRadius:8,cursor:'pointer',color:'#f59e0b',fontSize:13,textAlign:'left'}}
-                      onMouseEnter={e => e.currentTarget.style.background='rgba(245,158,11,0.08)'}
-                      onMouseLeave={e => e.currentTarget.style.background='none'}
-                      onClick={() => { setShowProfileMenu(false); setShowVip(true); }}
-                    >
-                      <span style={{fontSize:16}}>⭐</span> VIP Al
                     </button>
                     {/* Logout */}
                     <div style={{borderTop:'1px solid var(--border)',marginTop:6,paddingTop:6}}>
