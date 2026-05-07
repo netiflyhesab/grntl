@@ -2446,34 +2446,40 @@ function CreateListingPage({ t, user, showToast, onDone }) {
 // ONLINE STATUS COMPONENT
 // ============================================================
 function SellerOnlineStatus({ uid, t }) {
-  const [online, setOnline] = React.useState(false);
   const [lastSeen, setLastSeen] = React.useState(null);
   React.useEffect(() => {
     if (!uid || !db) return;
     const unsub = db.collection('users').doc(uid).onSnapshot(doc => {
       if (doc.exists) {
-        setOnline(doc.data().online || false);
         setLastSeen(doc.data().lastSeen);
       }
     });
     return unsub;
   }, [uid]);
 
-  const getLastSeen = () => {
-    if (!lastSeen) return '';
+  const [now, setNow] = React.useState(Date.now());
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getInfo = () => {
+    if (!lastSeen) return { isOnline: false, label: t.offline || 'Oflayn' };
     const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
-    const diff = Math.floor((Date.now() - date.getTime()) / 60000);
-    if (diff < 1) return 'az öncə';
-    if (diff < 60) return `${diff} dəq öncə`;
-    if (diff < 1440) return `${Math.floor(diff/60)} saat öncə`;
-    return `${Math.floor(diff/1440)} gün öncə`;
+    const diff = Math.floor((now - date.getTime()) / 60000);
+    if (diff < 2) return { isOnline: true, label: t.online || 'Onlayn' };
+    if (diff < 60) return { isOnline: false, label: `${diff} dəq öncə` };
+    if (diff < 1440) return { isOnline: false, label: `${Math.floor(diff/60)} saat öncə` };
+    return { isOnline: false, label: `${Math.floor(diff/1440)} gün öncə` };
   };
+
+  const { isOnline, label } = getInfo();
 
   return (
     <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11}}>
-      <div style={{width:7,height:7,borderRadius:'50%',background: online ? '#10b981' : '#6b7280', flexShrink:0}}/>
-      <span style={{color: online ? '#10b981' : 'var(--text3)'}}>
-        {online ? (t.online || 'Onlayn') : lastSeen ? `${t.offline||'Oflayn'} · ${getLastSeen()}` : (t.offline||'Oflayn')}
+      <div style={{width:7,height:7,borderRadius:'50%',background: isOnline ? '#10b981' : '#6b7280', flexShrink:0}}/>
+      <span style={{color: isOnline ? '#10b981' : 'var(--text3)'}}>
+        {label}
       </span>
     </div>
   );
@@ -3505,36 +3511,13 @@ function App() {
           isGuest: false,
         };
         setUser(userData);
-        // Online status — Firebase RTDB ilə etibarlı
+        // Online status — heartbeat ilə (hər 60 saniyə)
         if (db) {
-          const userStatusRef = firebase.database
-            ? firebase.database().ref(`/status/${u.uid}`)
-            : null;
-          const firestoreRef = db.collection('users').doc(u.uid);
-
-          if (userStatusRef) {
-            // RTDB ilə onDisconnect — server tərəfindən idarə edilir
-            firebase.database().ref('.info/connected').on('value', snap => {
-              if (snap.val() === false) return;
-              userStatusRef.onDisconnect().set({ state: 'offline', last_changed: firebase.database.ServerValue.TIMESTAMP });
-              userStatusRef.set({ state: 'online', last_changed: firebase.database.ServerValue.TIMESTAMP });
-              // RTDB dəyişikliyi Firestore-a əks etdir
-              userStatusRef.on('value', s => {
-                if (s.val()) {
-                  firestoreRef.set({ online: s.val().state === 'online', lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-                }
-              });
-            });
-          } else {
-            // RTDB yoxdursa sadə versiya + visibility API
-            firestoreRef.set({ online: true, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            document.addEventListener('visibilitychange', () => {
-              firestoreRef.set({ online: !document.hidden, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            });
-            window.addEventListener('beforeunload', () => {
-              firestoreRef.set({ online: false, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            });
-          }
+          const ref = db.collection('users').doc(u.uid);
+          const beat = () => ref.set({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          beat();
+          const interval = setInterval(beat, 60000);
+          window._onlineInterval = interval;
         }
       } else {
         setUser(null);
