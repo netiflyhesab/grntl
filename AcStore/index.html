@@ -2458,11 +2458,22 @@ function SellerOnlineStatus({ uid, t }) {
     });
     return unsub;
   }, [uid]);
+
+  const getLastSeen = () => {
+    if (!lastSeen) return '';
+    const date = lastSeen.toDate ? lastSeen.toDate() : new Date(lastSeen);
+    const diff = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (diff < 1) return 'az öncə';
+    if (diff < 60) return `${diff} dəq öncə`;
+    if (diff < 1440) return `${Math.floor(diff/60)} saat öncə`;
+    return `${Math.floor(diff/1440)} gün öncə`;
+  };
+
   return (
     <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11}}>
-      <div style={{width:7,height:7,borderRadius:'50%',background: online ? '#10b981' : '#6b7280'}}/>
+      <div style={{width:7,height:7,borderRadius:'50%',background: online ? '#10b981' : '#6b7280', flexShrink:0}}/>
       <span style={{color: online ? '#10b981' : 'var(--text3)'}}>
-        {online ? (t.online || 'Onlayn') : (t.offline || 'Oflayn')}
+        {online ? (t.online || 'Onlayn') : lastSeen ? `${t.offline||'Oflayn'} · ${getLastSeen()}` : (t.offline||'Oflayn')}
       </span>
     </div>
   );
@@ -3494,16 +3505,36 @@ function App() {
           isGuest: false,
         };
         setUser(userData);
-        // Online status
+        // Online status — Firebase RTDB ilə etibarlı
         if (db) {
-          db.collection('users').doc(u.uid).set({
-            online: true,
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true });
-          // Offline olduqda yenilə
-          window.addEventListener('beforeunload', () => {
-            db.collection('users').doc(u.uid).set({ online: false, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-          });
+          const userStatusRef = firebase.database
+            ? firebase.database().ref(`/status/${u.uid}`)
+            : null;
+          const firestoreRef = db.collection('users').doc(u.uid);
+
+          if (userStatusRef) {
+            // RTDB ilə onDisconnect — server tərəfindən idarə edilir
+            firebase.database().ref('.info/connected').on('value', snap => {
+              if (snap.val() === false) return;
+              userStatusRef.onDisconnect().set({ state: 'offline', last_changed: firebase.database.ServerValue.TIMESTAMP });
+              userStatusRef.set({ state: 'online', last_changed: firebase.database.ServerValue.TIMESTAMP });
+              // RTDB dəyişikliyi Firestore-a əks etdir
+              userStatusRef.on('value', s => {
+                if (s.val()) {
+                  firestoreRef.set({ online: s.val().state === 'online', lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+                }
+              });
+            });
+          } else {
+            // RTDB yoxdursa sadə versiya + visibility API
+            firestoreRef.set({ online: true, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            document.addEventListener('visibilitychange', () => {
+              firestoreRef.set({ online: !document.hidden, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            });
+            window.addEventListener('beforeunload', () => {
+              firestoreRef.set({ online: false, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            });
+          }
         }
       } else {
         setUser(null);
