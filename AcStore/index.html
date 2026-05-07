@@ -2582,24 +2582,39 @@ function ChatPage({ t, user, showToast, initialListing }) {
             <div className="empty-sub">{t.chatHint}</div>
           </div>
         ) : (
-          rooms.map(room => (
-            <div key={room.id} className="chat-room-item" onClick={() => openRoom(room)}>
-              <div style={{width:44,height:44,borderRadius:10,background:'var(--grad1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>
-                {CATEGORY_ICONS[room.listingCategory] || '🎮'}
+          rooms.map(room => {
+            const isUserBuyer = user.uid === room.buyerId;
+            const unread = isUserBuyer ? (room.unreadBuyer || 0) : (room.unreadSeller || 0);
+            const isUnread = unread > 0;
+            const senderName = room.lastSenderId === user.uid ? 'Siz' : (isUserBuyer ? room.sellerName : room.buyerName) || '';
+            return (
+            <div key={room.id} className="chat-room-item" onClick={() => openRoom(room)}
+              style={{background: isUnread ? 'rgba(124,58,237,0.06)' : 'transparent', borderLeft: isUnread ? '3px solid var(--neon1)' : '3px solid transparent'}}>
+              <div style={{position:'relative',flexShrink:0}}>
+                <div style={{width:44,height:44,borderRadius:10,background:'var(--grad1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>
+                  {CATEGORY_ICONS[room.listingCategory] || '🎮'}
+                </div>
+                {isUnread && (
+                  <div style={{position:'absolute',top:-4,right:-4,background:'var(--danger)',color:'white',borderRadius:'50%',minWidth:18,height:18,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 3px'}}>
+                    {unread > 9 ? '9+' : unread}
+                  </div>
+                )}
               </div>
               <div style={{flex:1,overflow:'hidden'}}>
-                <div style={{fontWeight:600,fontSize:14,marginBottom:2}} className="truncate">
+                <div style={{fontWeight: isUnread ? 700 : 600, fontSize:14, marginBottom:2}} className="truncate">
                   {room.listingTitle || 'Chat'}
                 </div>
-                <div style={{fontSize:12,color:'var(--text3)'}} className="truncate">
+                <div style={{fontSize:12, color: isUnread ? 'var(--text2)' : 'var(--text3)', fontWeight: isUnread ? 600 : 400}} className="truncate">
+                  {senderName ? <span style={{color: room.lastSenderId === user.uid ? 'var(--text3)' : 'var(--neon1)'}}>{senderName}: </span> : null}
                   {room.lastMessage || '...'}
                 </div>
               </div>
-              <div style={{fontSize:11,color:'var(--text3)',textAlign:'right',flexShrink:0}}>
+              <div style={{fontSize:11,color: isUnread ? 'var(--neon1)' : 'var(--text3)',textAlign:'right',flexShrink:0,fontWeight: isUnread ? 700 : 400}}>
                 {room.lastMessageAt ? formatTime(room.lastMessageAt) : ''}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -2649,6 +2664,8 @@ function ChatRoom({ room, user, t, onBack }) {
       batch.set(chatRef, {
         sellerId: sellerId,
         buyerId: buyerId,
+        sellerName: !isUserBuyer ? (user.displayName || user.email || '') : (room.sellerName || ''),
+        buyerName: isUserBuyer ? (user.displayName || user.email || '') : (room.buyerName || ''),
         participants: [sellerId, buyerId].filter(Boolean),
         listingId: room.listingId || listing.id || '',
         listingTitle: room.listingTitle || listing.title || '',
@@ -2656,7 +2673,6 @@ function ChatRoom({ room, user, t, onBack }) {
         lastMessage: msg,
         lastSenderId: user.uid,
         lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
-        // Qarşı tərəf üçün unread artır
         [isUserBuyer ? 'unreadSeller' : 'unreadBuyer']: firebase.firestore.FieldValue.increment(1),
       }, { merge: true });
       await batch.commit();
