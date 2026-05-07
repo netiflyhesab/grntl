@@ -3510,14 +3510,19 @@ function App() {
   // Oxunmamış mesaj sayı
   React.useEffect(() => {
     if (!user || user.isGuest || !db) { setUnreadCount(0); return; }
+    let buyerUnread = 0, sellerUnread = 0;
     const unsubBuyer = db.collection('chats')
       .where('buyerId', '==', user.uid)
-      .where('unreadBuyer', '>', 0)
-      .onSnapshot(snap => setUnreadCount(c => snap.size));
+      .onSnapshot(snap => {
+        buyerUnread = snap.docs.filter(d => (d.data().unreadBuyer || 0) > 0).length;
+        setUnreadCount(buyerUnread + sellerUnread);
+      }, () => {});
     const unsubSeller = db.collection('chats')
       .where('sellerId', '==', user.uid)
-      .where('unreadSeller', '>', 0)
-      .onSnapshot(snap => setUnreadCount(snap.size));
+      .onSnapshot(snap => {
+        sellerUnread = snap.docs.filter(d => (d.data().unreadSeller || 0) > 0).length;
+        setUnreadCount(buyerUnread + sellerUnread);
+      }, () => {});
     return () => { unsubBuyer(); unsubSeller(); };
   }, [user]);
 
