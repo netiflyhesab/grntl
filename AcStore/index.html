@@ -1112,6 +1112,26 @@ const TRANSLATIONS = {
     setupDesc: "Tətbiqi işə salmaq üçün Firebase layihəsi lazımdır.",
     online: "Onlayn",
     offline: "Oflayn",
+    tabLogin: "Giriş",
+    tabRegister: "Qeydiyyat",
+    nameLabel: "Ad Soyad",
+    emailLabel: "Email",
+    passLabel: "Şifrə",
+    loginBtn: "🔓 Daxil ol",
+    registerBtn: "🚀 Qeydiyyatdan keç",
+    nameRequired: "Ad və soyadı daxil edin",
+    emailRequired: "Email daxil edin",
+    passMin: "Şifrə ən az 6 simvol olmalıdır",
+    passPlaceholder: "Şifrənizi daxil edin",
+    passMinPlaceholder: "Ən az 6 simvol",
+    wrongPass: "Şifrə yanlışdır",
+    noUser: "Bu email ilə hesab tapılmadı",
+    invalidEmail: "Email düzgün deyil",
+    invalidCred: "Email və ya şifrə yanlışdır",
+    emailUsed: "Bu email artıq istifadə olunur",
+    weakPass: "Şifrə çox sadədir",
+    newMessage: "Yeni mesaj",
+    loginRegisterBtn: "🔓 Daxil ol / Qeydiyyat",
     editListing: "Elanı Redaktə Et",
     save: "Saxla",
     cancel: "Ləğv et",
@@ -1186,6 +1206,26 @@ const TRANSLATIONS = {
     setupDesc: "A Firebase project is required to run this app.",
     online: "Online",
     offline: "Offline",
+    tabLogin: "Sign In",
+    tabRegister: "Register",
+    nameLabel: "Full Name",
+    emailLabel: "Email",
+    passLabel: "Password",
+    loginBtn: "🔓 Sign In",
+    registerBtn: "🚀 Register",
+    nameRequired: "Enter your name",
+    emailRequired: "Enter your email",
+    passMin: "Password must be at least 6 characters",
+    passPlaceholder: "Enter your password",
+    passMinPlaceholder: "At least 6 characters",
+    wrongPass: "Wrong password",
+    noUser: "No account found with this email",
+    invalidEmail: "Invalid email",
+    invalidCred: "Invalid email or password",
+    emailUsed: "This email is already in use",
+    weakPass: "Password is too weak",
+    newMessage: "New message",
+    loginRegisterBtn: "🔓 Sign In / Register",
     editListing: "Edit Listing",
     save: "Save",
     cancel: "Cancel",
@@ -1260,6 +1300,26 @@ const TRANSLATIONS = {
     setupDesc: "Необходим проект Firebase для работы приложения.",
     online: "Онлайн",
     offline: "Офлайн",
+    tabLogin: "Войти",
+    tabRegister: "Регистрация",
+    nameLabel: "Имя Фамилия",
+    emailLabel: "Email",
+    passLabel: "Пароль",
+    loginBtn: "🔓 Войти",
+    registerBtn: "🚀 Зарегистрироваться",
+    nameRequired: "Введите имя",
+    emailRequired: "Введите email",
+    passMin: "Пароль минимум 6 символов",
+    passPlaceholder: "Введите пароль",
+    passMinPlaceholder: "Минимум 6 символов",
+    wrongPass: "Неверный пароль",
+    noUser: "Аккаунт не найден",
+    invalidEmail: "Неверный email",
+    invalidCred: "Неверный email или пароль",
+    emailUsed: "Email уже используется",
+    weakPass: "Пароль слишком простой",
+    newMessage: "Новое сообщение",
+    loginRegisterBtn: "🔓 Войти / Регистрация",
     editListing: "Редактировать",
     save: "Сохранить",
     cancel: "Отмена",
@@ -1476,37 +1536,36 @@ function AuthModal({ onClose, t }) {
   const switchTab = (t) => { setTab(t); reset(); };
 
   const signIn = async () => {
-    if (!email || !password) { setError('Email və şifrəni daxil edin'); return; }
+    if (!email || !password) { setError(t.emailRequired || 'Email və şifrəni daxil edin'); return; }
     setLoading(true); setError('');
     try {
       await auth.signInWithEmailAndPassword(email, password);
       onClose();
     } catch(e) {
       const msgs = {
-        'auth/user-not-found': 'Bu email ilə hesab tapılmadı',
-        'auth/wrong-password': 'Şifrə yanlışdır',
-        'auth/invalid-email': 'Email düzgün deyil',
-        'auth/invalid-credential': 'Email və ya şifrə yanlışdır',
+        'auth/user-not-found': t.noUser,
+        'auth/wrong-password': t.wrongPass,
+        'auth/invalid-email': t.invalidEmail,
+        'auth/invalid-credential': t.invalidCred,
       };
       setError(msgs[e.code] || e.message);
     } finally { setLoading(false); }
   };
 
   const register = async () => {
-    if (!displayName) { setError('Ad və soyadı daxil edin'); return; }
-    if (!email) { setError('Email daxil edin'); return; }
-    if (password.length < 6) { setError('Şifrə ən az 6 simvol olmalıdır'); return; }
+    if (!displayName) { setError(t.nameRequired); return; }
+    if (!email) { setError(t.emailRequired); return; }
+    if (password.length < 6) { setError(t.passMin); return; }
     setLoading(true); setError('');
     try {
       const cred = await auth.createUserWithEmailAndPassword(email, password);
       await cred.user.updateProfile({ displayName });
-      // auth listener avtomatik yeni user-i set edəcək
       onClose();
     } catch(e) {
       const msgs = {
-        'auth/email-already-in-use': 'Bu email artıq istifadə olunur',
-        'auth/invalid-email': 'Email düzgün deyil',
-        'auth/weak-password': 'Şifrə çox sadədir',
+        'auth/email-already-in-use': t.emailUsed,
+        'auth/invalid-email': t.invalidEmail,
+        'auth/weak-password': t.weakPass,
       };
       setError(msgs[e.code] || e.message);
     } finally { setLoading(false); }
@@ -1533,8 +1592,8 @@ function AuthModal({ onClose, t }) {
 
         {/* Tabs */}
         <div style={{display:'flex',borderBottom:'1px solid var(--border)'}}>
-          <button style={tabStyle(tab==='login')} onClick={() => switchTab('login')}>Giriş</button>
-          <button style={tabStyle(tab==='register')} onClick={() => switchTab('register')}>Qeydiyyat</button>
+          <button style={tabStyle(tab==='login')} onClick={() => switchTab('login')}>{t.tabLogin}</button>
+          <button style={tabStyle(tab==='register')} onClick={() => switchTab('register')}>{t.tabRegister}</button>
         </div>
 
         <div className="modal-body">
@@ -1546,7 +1605,7 @@ function AuthModal({ onClose, t }) {
 
           {tab === 'register' && (
             <div className="form-group">
-              <label className="label">Ad Soyad</label>
+              <label className="label">{t.nameLabel}</label>
               <input className="input" placeholder="Adınızı daxil edin" value={displayName} onChange={e => setDisplayName(e.target.value)}/>
             </div>
           )}
@@ -1557,12 +1616,12 @@ function AuthModal({ onClose, t }) {
           </div>
 
           <div className="form-group">
-            <label className="label">Şifrə</label>
+            <label className="label">{t.passLabel}</label>
             <div style={{position:'relative'}}>
               <input
                 className="input"
                 type={showPass ? 'text' : 'password'}
-                placeholder={tab==='register' ? 'Ən az 6 simvol' : 'Şifrənizi daxil edin'}
+                placeholder={tab==='register' ? (t.passMinPlaceholder||'Ən az 6 simvol') : (t.passPlaceholder||'Şifrənizi daxil edin')}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key==='Enter' && (tab==='login' ? signIn() : register())}
@@ -1580,7 +1639,7 @@ function AuthModal({ onClose, t }) {
             onClick={tab==='login' ? signIn : register}
             disabled={loading}
           >
-            {loading ? <div className="spinner"/> : (tab==='login' ? '🔓 Daxil ol' : '🚀 Qeydiyyatdan keç')}
+            {loading ? <div className="spinner"/> : (tab==='login' ? t.loginBtn : t.registerBtn)}
           </button>
 
           <div style={{display:'flex',alignItems:'center',gap:12,margin:'14px 0'}}>
@@ -2384,6 +2443,32 @@ function CreateListingPage({ t, user, showToast, onDone }) {
 }
 
 // ============================================================
+// ONLINE STATUS COMPONENT
+// ============================================================
+function SellerOnlineStatus({ uid, t }) {
+  const [online, setOnline] = React.useState(false);
+  const [lastSeen, setLastSeen] = React.useState(null);
+  React.useEffect(() => {
+    if (!uid || !db) return;
+    const unsub = db.collection('users').doc(uid).onSnapshot(doc => {
+      if (doc.exists) {
+        setOnline(doc.data().online || false);
+        setLastSeen(doc.data().lastSeen);
+      }
+    });
+    return unsub;
+  }, [uid]);
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11}}>
+      <div style={{width:7,height:7,borderRadius:'50%',background: online ? '#10b981' : '#6b7280'}}/>
+      <span style={{color: online ? '#10b981' : 'var(--text3)'}}>
+        {online ? (t.online || 'Onlayn') : (t.offline || 'Oflayn')}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================
 // CHAT PAGE (rooms list + individual chat)
 // ============================================================
 function ChatPage({ t, user, showToast, initialListing }) {
@@ -2399,13 +2484,15 @@ function ChatPage({ t, user, showToast, initialListing }) {
       const buyerId = user.uid;
       // Unikal room ID: listingId + hər iki tərəfin uid-i
       const roomId = [initialListing.id, sellerId, buyerId].filter(Boolean).sort().join('_');
-      setActiveRoom({
+      const newRoom = {
         id: roomId,
         listing: initialListing,
         sellerId,
         buyerId,
         participants: [sellerId, buyerId].filter(Boolean),
-      });
+      };
+      setActiveRoom(newRoom);
+      resetUnread(newRoom);
     }
   }, [initialListing]);
 
@@ -2451,6 +2538,14 @@ function ChatPage({ t, user, showToast, initialListing }) {
     );
   }
 
+  const resetUnread = async (room) => {
+    if (!db || !user) return;
+    const isUserBuyer = user.uid === room.buyerId;
+    await db.collection('chats').doc(room.id).update({
+      [isUserBuyer ? 'unreadBuyer' : 'unreadSeller']: 0,
+    }).catch(() => {});
+  };
+
   const openRoom = async (room) => {
     // Əgər listing məlumatı yoxdursa Firestore-dan yüklə
     if (!room.listing && room.listingId && db) {
@@ -2462,6 +2557,7 @@ function ChatPage({ t, user, showToast, initialListing }) {
       } catch(e) { console.error(e); }
     }
     setActiveRoom(room);
+    resetUnread(room);
   };
 
   if (activeRoom) {
@@ -2549,6 +2645,7 @@ function ChatRoom({ room, user, t, onBack }) {
       // sellerId və buyerId room-dan gəlir, dəyişdirilmir
       const sellerId = room.sellerId || listing.userId || '';
       const buyerId = room.buyerId || (user.uid !== sellerId ? user.uid : '');
+      const isUserBuyer = user.uid === buyerId;
       batch.set(chatRef, {
         sellerId: sellerId,
         buyerId: buyerId,
@@ -2559,6 +2656,8 @@ function ChatRoom({ room, user, t, onBack }) {
         lastMessage: msg,
         lastSenderId: user.uid,
         lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+        // Qarşı tərəf üçün unread artır
+        [isUserBuyer ? 'unreadSeller' : 'unreadBuyer']: firebase.firestore.FieldValue.increment(1),
       }, { merge: true });
       await batch.commit();
     } catch(e) {
@@ -3352,6 +3451,7 @@ function App() {
   const [showProfileMenu, setShowProfileMenu] = React.useState(false);
   const [showVip, setShowVip] = React.useState(false);
   const [showDeposit, setShowDeposit] = React.useState(false);
+  const [unreadCount, setUnreadCount] = React.useState(0);
   const [selectedListing, setSelectedListing] = React.useState(null);
   const [chatListing, setChatListing] = React.useState(null);
   const [favorites, setFavorites] = React.useState([]);
@@ -3370,13 +3470,25 @@ function App() {
     if (!firebaseInit) { setAuthLoading(false); return; }
     const unsub = auth.onAuthStateChanged(u => {
       if (u) {
-        setUser({
+        const userData = {
           uid: u.uid,
           email: u.email || '',
           displayName: u.displayName || '',
           photoURL: u.photoURL || '',
           isGuest: false,
-        });
+        };
+        setUser(userData);
+        // Online status
+        if (db) {
+          db.collection('users').doc(u.uid).set({
+            online: true,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+          // Offline olduqda yenilə
+          window.addEventListener('beforeunload', () => {
+            db.collection('users').doc(u.uid).set({ online: false, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          });
+        }
       } else {
         setUser(null);
       }
@@ -3393,6 +3505,20 @@ function App() {
       setFavorites(snap.docs.map(d => d.id));
     });
     return unsub;
+  }, [user]);
+
+  // Oxunmamış mesaj sayı
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) { setUnreadCount(0); return; }
+    const unsubBuyer = db.collection('chats')
+      .where('buyerId', '==', user.uid)
+      .where('unreadBuyer', '>', 0)
+      .onSnapshot(snap => setUnreadCount(c => snap.size));
+    const unsubSeller = db.collection('chats')
+      .where('sellerId', '==', user.uid)
+      .where('unreadSeller', '>', 0)
+      .onSnapshot(snap => setUnreadCount(snap.size));
+    return () => { unsubBuyer(); unsubSeller(); };
   }, [user]);
 
   const toggleFav = async (listingId) => {
@@ -3493,7 +3619,7 @@ function App() {
 
   const navItems = [
     { id: 'home', icon: Icons.home, label: t.home },
-    { id: 'chat', icon: Icons.chat, label: t.chat },
+    { id: 'chat', icon: Icons.chat, label: t.chat, badge: unreadCount },
     { id: 'create', icon: Icons.plus, label: t.create },
     { id: 'favorites', icon: () => <Icons.heart filled={false}/>, label: t.favorites },
     { id: 'profile', icon: Icons.profile, label: t.profile },
@@ -3644,7 +3770,10 @@ function App() {
               }
             }}
           >
-            <item.icon/>
+            <div style={{position:'relative',display:'inline-flex'}}>
+              <item.icon/>
+              {item.badge > 0 && <span style={{position:'absolute',top:-6,right:-8,background:'var(--danger)',color:'white',borderRadius:'50%',width:16,height:16,fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{item.badge > 9 ? '9+' : item.badge}</span>}
+            </div>
             <span>{item.label}</span>
           </button>
         ))}
