@@ -3514,7 +3514,10 @@ function App() {
         // Online status — heartbeat ilə (hər 60 saniyə)
         if (db) {
           const ref = db.collection('users').doc(u.uid);
-          const beat = () => ref.set({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          const beat = () => ref.set({
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+            online: firebase.firestore.FieldValue.delete(),
+          }, { merge: true });
           beat();
           const interval = setInterval(beat, 60000);
           window._onlineInterval = interval;
