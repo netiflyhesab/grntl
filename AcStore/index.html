@@ -1523,13 +1523,14 @@ function Toast({ toast }) {
 // AUTH MODAL
 // ============================================================
 function AuthModal({ onClose, t }) {
-  const [tab, setTab] = React.useState('login'); // 'login' | 'register'
+  const [tab, setTab] = React.useState('login'); // 'login' | 'register' | 'verify' | 'reset'
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [displayName, setDisplayName] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [showPass, setShowPass] = React.useState(false);
+  const [resetSent, setResetSent] = React.useState(false);
 
   const reset = () => { setEmail(''); setPassword(''); setDisplayName(''); setError(''); };
 
@@ -1607,7 +1608,7 @@ function AuthModal({ onClose, t }) {
         </div>
 
         {/* Tabs - only show for login/register */}
-        {tab !== 'verify' && (
+        {tab !== 'verify' && tab !== 'reset' && (
           <div style={{display:'flex',borderBottom:'1px solid var(--border)'}}>
             <button style={tabStyle(tab==='login')} onClick={() => switchTab('login')}>{t.tabLogin}</button>
             <button style={tabStyle(tab==='register')} onClick={() => switchTab('register')}>{t.tabRegister}</button>
@@ -1651,8 +1652,53 @@ function AuthModal({ onClose, t }) {
             </div>
           )}
 
-          {/* LOGIN / REGISTER FORMS */}
-          {tab !== 'verify' && (
+          {tab === 'reset' && (
+            <div style={{padding:'10px 0'}}>
+              <h3 style={{fontFamily:'Rajdhani',fontSize:20,fontWeight:700,marginBottom:8}}>🔑 Şifrəni sıfırla</h3>
+              <p style={{fontSize:13,color:'var(--text3)',lineHeight:1.6,marginBottom:16}}>
+                Emailinizi daxil edin, şifrə sıfırlama linki göndərəcəyik.
+              </p>
+              {error && (
+                <div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--danger)',marginBottom:14}}>
+                  {error}
+                </div>
+              )}
+              {resetSent ? (
+                <div style={{background:'rgba(34,197,94,0.1)',border:'1px solid rgba(34,197,94,0.3)',borderRadius:8,padding:'14px',fontSize:13,color:'#4ade80',marginBottom:16,textAlign:'center',lineHeight:1.7}}>
+                  ✅ Link göndərildi! Emailinizi yoxlayın.<br/>
+                  <span style={{fontSize:12,opacity:0.8}}>Spam qovluğunu da yoxlayın.</span>
+                </div>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="label">Email</label>
+                    <input className="input" type="email" placeholder="example@mail.com" value={email} onChange={e => setEmail(e.target.value)}/>
+                  </div>
+                  <button className="btn btn-primary w-full" style={{padding:'12px',marginBottom:10}} disabled={loading} onClick={async () => {
+                    if (!email.trim()) { setError('Email daxil edin'); return; }
+                    if (!isValidEmail(email)) { setError('Düzgün email formatı daxil edin'); return; }
+                    setLoading(true); setError('');
+                    try {
+                      await auth.sendPasswordResetEmail(email.trim());
+                      setResetSent(true);
+                    } catch(e) {
+                      const msgs = {
+                        'auth/user-not-found': 'Bu email ilə hesab tapılmadı',
+                        'auth/invalid-email': 'Düzgün email formatı daxil edin',
+                      };
+                      setError(msgs[e.code] || 'Göndərmək mümkün olmadı');
+                    } finally { setLoading(false); }
+                  }}>
+                    {loading ? <div className="spinner"/> : '📨 Link göndər'}
+                  </button>
+                </>
+              )}
+              <button className="btn btn-outline w-full" style={{padding:'10px',fontSize:13}} onClick={() => { setResetSent(false); switchTab('login'); }}>
+                ← Giriş səhifəsinə qayıt
+              </button>
+            </div>
+          )}
+          {tab !== 'verify' && tab !== 'reset' && (
             <>
               {error && (
                 <div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--danger)',marginBottom:14}}>
@@ -1688,6 +1734,14 @@ function AuthModal({ onClose, t }) {
                     {showPass ? '🙈' : '👁'}
                   </button>
                 </div>
+              </div>
+
+              <div style={{textAlign:'right',marginTop:-8,marginBottom:12}}>
+                {tab === 'login' && (
+                  <button onClick={() => switchTab('reset')} style={{background:'none',border:'none',cursor:'pointer',color:'var(--neon1)',fontSize:12,padding:0}}>
+                    Şifrəni unutmusunuz?
+                  </button>
+                )}
               </div>
 
               <button
@@ -2582,17 +2636,39 @@ function ChatPage({ t, user, showToast, initialListing, onOpenListing }) {
     if (initialListing && user && !user.isGuest) {
       const sellerId = initialListing.userId || '';
       const buyerId = user.uid;
-      // Unikal room ID: listingId + hər iki tərəfin uid-i
+      if (sellerId === buyerId) return; // öz elanına mesaj göndərə bilməz
       const roomId = [initialListing.id, sellerId, buyerId].filter(Boolean).sort().join('_');
-      const newRoom = {
-        id: roomId,
-        listing: initialListing,
-        sellerId,
-        buyerId,
-        participants: [sellerId, buyerId].filter(Boolean),
-      };
-      setActiveRoom(newRoom);
-      resetUnread(newRoom);
+      // Firestore-dan mövcud room məlumatını yüklə
+      db.collection('chats').doc(roomId).get().then(doc => {
+        const existing = doc.exists ? doc.data() : {};
+        const newRoom = {
+          id: roomId,
+          listing: initialListing,
+          sellerId: existing.sellerId || sellerId,
+          buyerId: existing.buyerId || buyerId,
+          sellerName: existing.sellerName || initialListing.sellerName || '',
+          buyerName: existing.buyerName || user.displayName || '',
+          listingId: initialListing.id,
+          listingTitle: initialListing.title || '',
+          participants: [sellerId, buyerId].filter(Boolean),
+        };
+        setActiveRoom(newRoom);
+        resetUnread(newRoom);
+      }).catch(() => {
+        const newRoom = {
+          id: roomId,
+          listing: initialListing,
+          sellerId,
+          buyerId,
+          sellerName: initialListing.sellerName || '',
+          buyerName: user.displayName || '',
+          listingId: initialListing.id,
+          listingTitle: initialListing.title || '',
+          participants: [sellerId, buyerId].filter(Boolean),
+        };
+        setActiveRoom(newRoom);
+        resetUnread(newRoom);
+      });
     }
   }, [initialListing]);
 
@@ -2750,28 +2826,27 @@ function ChatRoom({ room, user, t, onBack, onOpenListing }) {
     try {
       const batch = db.batch();
       const msgRef = db.collection('chats').doc(room.id).collection('messages').doc();
+      const senderName = user.displayName || (user.email || '').split('@')[0] || 'User';
       batch.set(msgRef, {
         text: msg,
         senderId: user.uid,
         senderEmail: user.email,
-        senderName: user.displayName || (user.email || '').split('@')[0] || 'User',
+        senderName: senderName,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
       const chatRef = db.collection('chats').doc(room.id);
-      const listing = room.listing || {};
-      // sellerId və buyerId room-dan gəlir, dəyişdirilmir
-      const sellerId = room.sellerId || listing.userId || '';
-      const buyerId = room.buyerId || (user.uid !== sellerId ? user.uid : '');
+      const sellerId = room.sellerId;
+      const buyerId = room.buyerId;
       const isUserBuyer = user.uid === buyerId;
       batch.set(chatRef, {
-        sellerId: sellerId,
-        buyerId: buyerId,
-        sellerName: !isUserBuyer ? (user.displayName || user.email || '') : (room.sellerName || ''),
-        buyerName: isUserBuyer ? (user.displayName || user.email || '') : (room.buyerName || ''),
+        sellerId,
+        buyerId,
+        sellerName: isUserBuyer ? (room.sellerName || '') : senderName,
+        buyerName: isUserBuyer ? senderName : (room.buyerName || ''),
         participants: [sellerId, buyerId].filter(Boolean),
-        listingId: room.listingId || listing.id || '',
-        listingTitle: room.listingTitle || listing.title || '',
-        listingCategory: room.listingCategory || listing.category || '',
+        listingId: room.listingId || room.listing?.id || '',
+        listingTitle: room.listingTitle || room.listing?.title || '',
+        listingCategory: room.listingCategory || room.listing?.category || '',
         lastMessage: msg,
         lastSenderId: user.uid,
         lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2806,9 +2881,7 @@ function ChatRoom({ room, user, t, onBack, onOpenListing }) {
             <div style={{fontWeight:700,fontSize:15,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',color:'var(--text1)'}}>
               {room.buyerId === user.uid ? (room.sellerName || 'Chat') : (room.buyerName || 'Chat')}
             </div>
-            <div style={{fontSize:11,color:'var(--text3)'}}>
-              {room.listingTitle || ''}
-            </div>
+            <SellerOnlineStatus uid={room.buyerId === user.uid ? room.sellerId : room.buyerId} t={t} />
           </div>
         </div>
       </div>
@@ -2820,15 +2893,18 @@ function ChatRoom({ room, user, t, onBack, onOpenListing }) {
             👋 Söhbəti başladın!
           </div>
         )}
-        {messages.map(msg => (
-          <div key={msg.id} className={`msg ${msg.senderId === user.uid ? 'mine' : 'theirs'}`}>
-            <div>{msg.text}</div>
-            <div className="msg-meta">
-              {msg.senderId !== user.uid && <span>{msg.senderName} · </span>}
-              {formatTime(msg.createdAt)}
+        {messages.map(msg => {
+          const isMine = msg.senderId === user.uid;
+          return (
+            <div key={msg.id} className={`msg ${isMine ? 'mine' : 'theirs'}`}>
+              <div>{msg.text}</div>
+              <div className="msg-meta">
+                {!isMine && <span>{msg.senderName} · </span>}
+                {formatTime(msg.createdAt)}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef}/>
       </div>
 
@@ -3607,7 +3683,13 @@ function App() {
           isGuest: false,
         };
         setUser(userData);
-
+        // İlk daxil olanda lastSeen yaz
+        try {
+          await db.collection('users').doc(u.uid).set({
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+            displayName: u.displayName || '',
+          }, { merge: true });
+        } catch(e) {}
       } else {
         setUser(null);
       }
@@ -3615,6 +3697,19 @@ function App() {
     });
     return unsub;
   }, [firebaseInit]);
+
+  // Hər 60 saniyədə lastSeen yenilə (online göstərici üçün)
+  React.useEffect(() => {
+    if (!user || user.isGuest || !db) return;
+    const update = () => {
+      db.collection('users').doc(user.uid).set({
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true }).catch(() => {});
+    };
+    update();
+    const timer = setInterval(update, 60000);
+    return () => clearInterval(timer);
+  }, [user]);
 
   // Load favorites
   React.useEffect(() => {
