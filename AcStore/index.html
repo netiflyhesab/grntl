@@ -3767,9 +3767,9 @@ function VipModal({ user, onClose, showToast }) {
 }
 function LangSwitcher({ lang, setLang }) {
   const options = [
-    { code: 'az', flag: '🇦🇿', label: 'AZ' },
-    { code: 'en', flag: '🇬🇧', label: 'EN' },
-    { code: 'ru', flag: '🇷🇺', label: 'RU' },
+    { code: 'az', label: 'AZ' },
+    { code: 'en', label: 'EN' },
+    { code: 'ru', label: 'RU' },
   ];
   return (
     <div style={{
@@ -3788,16 +3788,20 @@ function LangSwitcher({ lang, setLang }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: '5px 8px',
+            padding: '5px 10px',
             borderRadius: 7,
             border: 'none',
             cursor: 'pointer',
-            fontSize: 18,
+            fontSize: 12,
+            fontWeight: 700,
+            fontFamily: "'Exo 2', sans-serif",
+            letterSpacing: '0.5px',
             transition: 'all 0.18s',
             background: lang === o.code ? 'var(--neon1)' : 'transparent',
+            color: lang === o.code ? '#fff' : 'var(--text3)',
           }}
         >
-          {o.flag}
+          {o.label}
         </button>
       ))}
     </div>
