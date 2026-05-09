@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AccStore – Game Account Marketplace</title>
+  <title>AccStore – Account Marketplace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -1051,13 +1051,13 @@ async function tgSendPhoto(base64, caption) {
 const TRANSLATIONS = {
   az: {
     appName: "AccStore",
-    tagline: "Oyun Hesabları Bazarı",
+    tagline: "Hesab Alqı-Satqı Bazarı",
     home: "Ana Səhifə",
     chat: "Söhbət",
     create: "Əlavə Et",
     favorites: "Seçilmişlər",
     profile: "Profil",
-    search: "Oyun axtarın...",
+    search: "Hesab axtarın...",
     allCategories: "Hamısı",
     createListing: "Elan Yarat",
     title: "Başlıq",
@@ -1088,14 +1088,26 @@ const TRANSLATIONS = {
     postedAt: "Tarix:",
     categories: {
       all: "Hamısı",
-      moba: "MOBA",
-      fps: "FPS",
-      rpg: "RPG",
-      mmo: "MMO",
-      battle_royale: "Battle Royale",
-      sports: "İdman",
-      strategy: "Strategiya",
-      other: "Digər"
+      // Oyun hesabları
+      game_fps: "FPS",
+      game_rpg: "RPG",
+      game_battle_royale: "Battle Royale",
+      game_sports: "İdman",
+      game_strategy: "Strategiya",
+      game_other: "Oyun / Digər",
+      // Sosial media
+      social_instagram: "Instagram",
+      social_facebook: "Facebook",
+      social_x: "X (Twitter)",
+      social_netflix: "Netflix",
+      social_tiktok: "TikTok",
+      social_other: "Sosial / Digər",
+      // Digər
+      other: "Digər",
+      // Qrup adları
+      group_game: "🎮 Oyun Hesabları",
+      group_social: "📱 Sosial Media",
+      group_other: "📦 Digər",
     },
     confirmDelete: "Bu elanı silmək istədiyinizə əminsiniz?",
     yes: "Bəli",
@@ -1145,13 +1157,13 @@ const TRANSLATIONS = {
   },
   en: {
     appName: "AccStore",
-    tagline: "Game Account Marketplace",
+    tagline: "Account Marketplace",
     home: "Home",
     chat: "Chat",
     create: "Post",
     favorites: "Favorites",
     profile: "Profile",
-    search: "Search games...",
+    search: "Search accounts...",
     allCategories: "All",
     createListing: "Create Listing",
     title: "Title",
@@ -1182,14 +1194,22 @@ const TRANSLATIONS = {
     postedAt: "Date:",
     categories: {
       all: "All",
-      moba: "MOBA",
-      fps: "FPS",
-      rpg: "RPG",
-      mmo: "MMO",
-      battle_royale: "Battle Royale",
-      sports: "Sports",
-      strategy: "Strategy",
-      other: "Other"
+      game_fps: "FPS",
+      game_rpg: "RPG",
+      game_battle_royale: "Battle Royale",
+      game_sports: "Sports",
+      game_strategy: "Strategy",
+      game_other: "Game / Other",
+      social_instagram: "Instagram",
+      social_facebook: "Facebook",
+      social_x: "X (Twitter)",
+      social_netflix: "Netflix",
+      social_tiktok: "TikTok",
+      social_other: "Social / Other",
+      other: "Other",
+      group_game: "🎮 Game Accounts",
+      group_social: "📱 Social Media",
+      group_other: "📦 Other",
     },
     confirmDelete: "Are you sure you want to delete this listing?",
     yes: "Yes",
@@ -1239,13 +1259,13 @@ const TRANSLATIONS = {
   },
   ru: {
     appName: "AccStore",
-    tagline: "Маркетплейс Игровых Аккаунтов",
+    tagline: "Маркетплейс Аккаунтов",
     home: "Главная",
     chat: "Чат",
     create: "Создать",
     favorites: "Избранное",
     profile: "Профиль",
-    search: "Поиск игр...",
+    search: "Поиск аккаунтов...",
     allCategories: "Все",
     createListing: "Создать Объявление",
     title: "Заголовок",
@@ -1276,14 +1296,22 @@ const TRANSLATIONS = {
     postedAt: "Дата:",
     categories: {
       all: "Все",
-      moba: "MOBA",
-      fps: "FPS",
-      rpg: "RPG",
-      mmo: "MMO",
-      battle_royale: "Battle Royale",
-      sports: "Спорт",
-      strategy: "Стратегия",
-      other: "Другое"
+      game_fps: "FPS",
+      game_rpg: "RPG",
+      game_battle_royale: "Battle Royale",
+      game_sports: "Спорт",
+      game_strategy: "Стратегия",
+      game_other: "Игры / Другое",
+      social_instagram: "Instagram",
+      social_facebook: "Facebook",
+      social_x: "X (Twitter)",
+      social_netflix: "Netflix",
+      social_tiktok: "TikTok",
+      social_other: "Соцсети / Другое",
+      other: "Другое",
+      group_game: "🎮 Игровые аккаунты",
+      group_social: "📱 Соцсети",
+      group_other: "📦 Другое",
     },
     confirmDelete: "Вы уверены, что хотите удалить?",
     yes: "Да",
@@ -1333,10 +1361,22 @@ const TRANSLATIONS = {
   }
 };
 
-const CATEGORIES = ['moba','fps','rpg','mmo','battle_royale','sports','strategy','other'];
+const CATEGORIES = [
+  'game_fps','game_rpg','game_battle_royale','game_sports','game_strategy','game_other',
+  'social_instagram','social_facebook','social_x','social_netflix','social_tiktok','social_other',
+  'other'
+];
+const CATEGORY_GROUPS = {
+  game: ['game_fps','game_rpg','game_battle_royale','game_sports','game_strategy','game_other'],
+  social: ['social_instagram','social_facebook','social_x','social_netflix','social_tiktok','social_other'],
+  other: ['other'],
+};
 const CATEGORY_ICONS = {
-  moba: '🗡️', fps: '🔫', rpg: '⚔️', mmo: '🌐',
-  battle_royale: '🪂', sports: '⚽', strategy: '♟️', other: '🎮'
+  game_fps: '🔫', game_rpg: '⚔️', game_battle_royale: '🪂',
+  game_sports: '⚽', game_strategy: '♟️', game_other: '🎮',
+  social_instagram: '📸', social_facebook: '👤', social_x: '🐦',
+  social_netflix: '🎬', social_tiktok: '🎵', social_other: '📱',
+  other: '📦',
 };
 const GAME_EMOJIS = ['🎮','🕹️','⚔️','🏆','💎','🔫','🗡️','🌟','🎯','🧙'];
 
@@ -1453,7 +1493,7 @@ function SetupScreen({ onDone, t }) {
   return (
     <div className="setup-screen">
       <div className="logo">Acc<span>Store</span></div>
-      <p style={{color:'var(--text2)', fontSize:14}}>Game Account Marketplace</p>
+      <p style={{color:'var(--text2)', fontSize:14}}>Account Marketplace</p>
 
       <div className="setup-card">
         <h2 style={{fontFamily:'Rajdhani',fontSize:20,marginBottom:6}}>🔥 Firebase Setup</h2>
@@ -1866,6 +1906,22 @@ function HomePage({ t, user, onListingClick, onFav, favorites }) {
     return matchSearch && matchCat;
   });
 
+  const [openGroup, setOpenGroup] = React.useState(null);
+  const getGroupOfCat = (cat) => {
+    if (CATEGORY_GROUPS.game.includes(cat)) return 'game';
+    if (CATEGORY_GROUPS.social.includes(cat)) return 'social';
+    return null;
+  };
+  const activeGroup = getGroupOfCat(category);
+  const toggleGroup = (group) => setOpenGroup(prev => prev === group ? null : group);
+
+  React.useEffect(() => {
+    if (!openGroup) return;
+    const close = (e) => setOpenGroup(null);
+    setTimeout(() => document.addEventListener('click', close), 0);
+    return () => document.removeEventListener('click', close);
+  }, [openGroup]);
+
   return (
     <div className="page">
       <div className="container">
@@ -1897,15 +1953,94 @@ function HomePage({ t, user, onListingClick, onFav, favorites }) {
           </div>
         </div>
 
-        <div className="chips">
-          <div className={`chip ${category === 'all' ? 'active' : ''}`} onClick={() => setCategory('all')}>
-            🎮 {t.categories.all}
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',margin:'12px 0 16px',alignItems:'flex-start'}}>
+          {/* Hamısı */}
+          <div
+            className={`chip ${category === 'all' ? 'active' : ''}`}
+            onClick={() => { setCategory('all'); setOpenGroup(null); }}
+          >
+            🌐 {t.categories.all}
           </div>
-          {CATEGORIES.map(cat => (
-            <div key={cat} className={`chip ${category === cat ? 'active' : ''}`} onClick={() => setCategory(cat)}>
-              {CATEGORY_ICONS[cat]} {t.categories[cat]}
+
+          {/* Oyun Hesabları group */}
+          <div style={{position:'relative'}}>
+            <div
+              className={`chip ${activeGroup === 'game' ? 'active' : ''}`}
+              onClick={() => toggleGroup('game')}
+              style={{display:'flex',alignItems:'center',gap:6}}
+            >
+              🎮 {t.categories.group_game.replace(/^[^\s]+ /,'')}
+              <span style={{fontSize:10,opacity:0.7}}>{openGroup === 'game' ? '▲' : '▼'}</span>
             </div>
-          ))}
+            {openGroup === 'game' && (
+              <div style={{
+                position:'absolute',top:'calc(100% + 6px)',left:0,zIndex:100,
+                background:'var(--bg2)',border:'1px solid var(--border)',
+                borderRadius:12,padding:6,display:'flex',flexDirection:'column',gap:4,
+                minWidth:160,boxShadow:'0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                {CATEGORY_GROUPS.game.map(cat => (
+                  <div key={cat}
+                    onClick={() => { setCategory(cat); setOpenGroup(null); }}
+                    style={{
+                      padding:'8px 14px',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:500,
+                      background: category === cat ? 'var(--neon1)' : 'transparent',
+                      color: category === cat ? '#fff' : 'var(--text1)',
+                      transition:'background 0.15s',
+                    }}
+                    onMouseEnter={e => { if(category!==cat) e.currentTarget.style.background='var(--bg3)'; }}
+                    onMouseLeave={e => { if(category!==cat) e.currentTarget.style.background='transparent'; }}
+                  >
+                    {CATEGORY_ICONS[cat]} {t.categories[cat]}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Sosial Media group */}
+          <div style={{position:'relative'}}>
+            <div
+              className={`chip ${activeGroup === 'social' ? 'active' : ''}`}
+              onClick={() => toggleGroup('social')}
+              style={{display:'flex',alignItems:'center',gap:6}}
+            >
+              📱 {t.categories.group_social.replace(/^[^\s]+ /,'')}
+              <span style={{fontSize:10,opacity:0.7}}>{openGroup === 'social' ? '▲' : '▼'}</span>
+            </div>
+            {openGroup === 'social' && (
+              <div style={{
+                position:'absolute',top:'calc(100% + 6px)',left:0,zIndex:100,
+                background:'var(--bg2)',border:'1px solid var(--border)',
+                borderRadius:12,padding:6,display:'flex',flexDirection:'column',gap:4,
+                minWidth:160,boxShadow:'0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                {CATEGORY_GROUPS.social.map(cat => (
+                  <div key={cat}
+                    onClick={() => { setCategory(cat); setOpenGroup(null); }}
+                    style={{
+                      padding:'8px 14px',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:500,
+                      background: category === cat ? 'var(--neon1)' : 'transparent',
+                      color: category === cat ? '#fff' : 'var(--text1)',
+                      transition:'background 0.15s',
+                    }}
+                    onMouseEnter={e => { if(category!==cat) e.currentTarget.style.background='var(--bg3)'; }}
+                    onMouseLeave={e => { if(category!==cat) e.currentTarget.style.background='transparent'; }}
+                  >
+                    {CATEGORY_ICONS[cat]} {t.categories[cat]}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Digər */}
+          <div
+            className={`chip ${category === 'other' ? 'active' : ''}`}
+            onClick={() => { setCategory('other'); setOpenGroup(null); }}
+          >
+            📦 {t.categories.other}
+          </div>
         </div>
 
         {loading ? (
@@ -2302,7 +2437,15 @@ function EditListingPage({ listing, onBack, t, showToast, user }) {
           <div className="form-group" style={{flex:1}}>
             <label className="label">{t.category}</label>
             <select className="input" value={form.category} onChange={e => setForm(p=>({...p,category:e.target.value}))}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+              <optgroup label={t.categories.group_game}>
+                {CATEGORY_GROUPS.game.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+              </optgroup>
+              <optgroup label={t.categories.group_social}>
+                {CATEGORY_GROUPS.social.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+              </optgroup>
+              <optgroup label={t.categories.group_other}>
+                <option value="other">{CATEGORY_ICONS.other} {t.categories.other}</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -2323,7 +2466,7 @@ function EditListingPage({ listing, onBack, t, showToast, user }) {
 // ============================================================
 function CreateListingPage({ t, user, showToast, onDone }) {
   const [form, setForm] = React.useState({
-    title: '', description: '', price: '', category: 'other', phone: '', isVip: false
+    title: '', description: '', price: '', category: 'game_fps', phone: '', isVip: false
   });
   const [images, setImages] = React.useState([]);
   const [imageFiles, setImageFiles] = React.useState([]);
@@ -2417,7 +2560,7 @@ function CreateListingPage({ t, user, showToast, onDone }) {
         });
       }
       showToast(t.saved, 'success');
-      setForm({ title:'', description:'', price:'', category:'other', phone:'', isVip: false });
+      setForm({ title:'', description:'', price:'', category:'game_fps', phone:'', isVip: false });
       setImages([]); setImageFiles([]);
       onDone();
     } catch(e) {
@@ -2462,7 +2605,15 @@ function CreateListingPage({ t, user, showToast, onDone }) {
           <div className="form-group" style={{flex:1}}>
             <label className="label">{t.category}</label>
             <select className="input" value={form.category} onChange={e => setForm(p=>({...p,category:e.target.value}))}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+              <optgroup label={t.categories.group_game}>
+                {CATEGORY_GROUPS.game.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+              </optgroup>
+              <optgroup label={t.categories.group_social}>
+                {CATEGORY_GROUPS.social.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {t.categories[c]}</option>)}
+              </optgroup>
+              <optgroup label={t.categories.group_other}>
+                <option value="other">{CATEGORY_ICONS.other} {t.categories.other}</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -3611,34 +3762,46 @@ function VipModal({ user, onClose, showToast }) {
   );
 
 }
-function LangSwitcher({ lang, setLang, t }) {
-  const [open, setOpen] = React.useState(false);
+function LangSwitcher({ lang, setLang }) {
   const options = [
     { code: 'az', flag: '🇦🇿', label: 'AZ' },
     { code: 'en', flag: '🇬🇧', label: 'EN' },
     { code: 'ru', flag: '🇷🇺', label: 'RU' },
   ];
-  const current = options.find(o => o.code === lang);
   return (
-    <div className="relative">
-      <button className="lang-btn" onClick={() => setOpen(p => !p)} style={{fontSize:20,padding:'4px 6px',background:'none',border:'none',cursor:'pointer',lineHeight:1}}>
-        {current?.flag}
-      </button>
-      {open && (
-        <div className="lang-dropdown">
-          {options.map(o => (
-            <div
-              key={o.code}
-              className={`lang-option ${lang === o.code ? 'active' : ''}`}
-              onClick={() => { setLang(o.code); setOpen(false); }}
-              style={{display:'flex',alignItems:'center',gap:8}}
-            >
-              <span style={{fontSize:18}}>{o.flag}</span>
-              <span style={{fontSize:13}}>{o.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      background: 'var(--bg2)',
+      border: '1px solid var(--border)',
+      borderRadius: 10,
+      padding: 3,
+      gap: 2,
+    }}>
+      {options.map(o => (
+        <button
+          key={o.code}
+          onClick={() => setLang(o.code)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '5px 10px',
+            borderRadius: 7,
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 700,
+            fontFamily: "'Exo 2', sans-serif",
+            transition: 'all 0.18s',
+            background: lang === o.code ? 'var(--neon1)' : 'transparent',
+            color: lang === o.code ? '#fff' : 'var(--text3)',
+          }}
+        >
+          <span style={{fontSize: 15}}>{o.flag}</span>
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }
